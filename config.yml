@@ -1,0 +1,4 @@
+paths:
+  - /path/to/workspaces
+openblas:
+  /path/to/openblas
