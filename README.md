@@ -42,7 +42,7 @@ First edit config.yml to specify the
 
 and then do:
 
-    sudo pip setup.py install
+    pip setup.py install
 
 
 ## Usage ##
