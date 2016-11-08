@@ -1,7 +1,3 @@
-apt-get update
-#install gcc
-echo "Y" | sudo apt-get install build-essential python-dev python-setuptools python-pip gfortran git
-
 mkdir /tmp/build
 cd /tmp/build
 
@@ -18,7 +14,3 @@ ldconfig
 cd /
 rm -rf /tmp/build
 rm -rf /build_open_blas.sh
-
-
-
-

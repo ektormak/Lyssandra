@@ -11,7 +11,7 @@ cp /numpy-site.cfg numpy/site.cfg
 git clone https://github.com/scipy/scipy
 cp /scipy-site.cfg scipy/site.cfg
 (cd scipy && python setup.py build && python setup.py install)
-
+# cleanup
 cd /
 rm -rf /tmp/build
 rm -rf /build_numpy_scipy.sh

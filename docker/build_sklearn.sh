@@ -1,1 +1,0 @@
-#do not build from source, use pip instead
