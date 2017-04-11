@@ -4,24 +4,22 @@ A collection of Python tools for feature extraction and image classification usi
 ## features ##
 
 1. Sparse Coding algorithms
- 1. Orthogonal Matching Pursuit (OMP)
- 2. Batch OMP [1]
- 3. Group OMP [2]
- 4. Non-Negative OMP [3]
- 5. Iterative Hard Thresholding
+   - Orthogonal Matching Pursuit (OMP)
+   - Batch OMP [1]
+   - Group OMP [2]
+   - Non-Negative OMP [3]
+   - Iterative Hard Thresholding
 2. Dictionary Learning algorithms
- 1. K-SVD and its approximate variant [4]
- 2. Online Dictionary Learning [5]
- 3. Projected Gradient Descent
+   - K-SVD and its approximate variant [4]
+   - Online Dictionary Learning [5]
+   - Projected Gradient Descent
 3. Feature Extraction
- 1. Spatial Pyramid Matching using Sparse Coding [6]
- 2. Hierarchical Matching Pursuit [7]
- 3. Convolutional Feature Encoders [8]
- 4. Dense SIFT extraction
-4.Classification
- 1. Label Consistent K-SVD [9]
- 2. Sparse Representation based Classification [10]
- 3. Multi-class Linear SVMs
+   - Spatial Pyramid Matching using Sparse Coding [6]
+   - Convolutional Feature Encoders [8]
+   - Dense SIFT extraction
+4. Classification
+   - Label Consistent K-SVD [9]
+   - Sparse Representation based Classification [10]
 
 ## Installation ##
 
@@ -30,9 +28,9 @@ This package has the following dependencies:
 * numpy
 * scipy
 * scikit-learn
-* matplotlib
+* matplotlib (optional)
 * Pillow
-* for LASSO problems, the Python version of SPAMS (http://spams-devel.gforge.inria.fr/index.html)
+* for LASSO problems, the Python version of SPAMS http://spams-devel.gforge.inria.fr/index.html
   must be installed in your system
 * OpenBLAS (optional)
 
@@ -44,9 +42,10 @@ and then do:
 
     pip setup.py install
 
+For best performance, configuring numpy with OpenBlas is recommended (see the `Dockerfile`).
 
 ## Usage ##
-Have a look at the examples folder for some usage examples, and typical workflows.
+Have a look at the `lyssa/examples` folder for some usage examples, and typical workflows.
 
 ## References ##
 
