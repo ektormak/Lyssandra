@@ -1,12 +1,9 @@
 import numpy as np
-from lyssa.utils.dataset import split_dataset
-from lyssa.sparse_coding import sparse_encoder
 from lyssa.utils.math import fast_dot
 import abc
 from lyssa.classify import classifier
-from lyssa.utils import norm_cols,set_openblas_threads,run_parallel
-from lyssa.dict_learning.utils import normalize,get_class_atoms,approx_error,init_dictionary
-
+from lyssa.utils import norm_cols, set_openblas_threads, run_parallel
+from lyssa.dict_learning.utils import normalize, get_class_atoms, approx_error, init_dictionary
 
 """
 A module that implements the classification system of
@@ -18,224 +15,217 @@ the difference between global and local SRC classifiers is explained in the pape
 """
 
 
-def sci(z,n_class_atoms,reg='l0'):
-	"""
-	the sparsity concentration index of a coefficient vector z
-	for a given regularizer
-	"""
+def sci(z, n_class_atoms, reg='l0'):
+    """
+    the sparsity concentration index of a coefficient vector z
+    for a given regularizer
+    """
 
-	n_classes = len(n_class_atoms)
-	if reg == 'l0':
-		norm_const = z.nonzero()[0].size
-		nom = np.max([ z[get_class_atoms(c,n_class_atoms)].nonzero()[0].size for c in range(n_classes)] )
-	elif reg == 'l1':
-		nom = np.max([ np.sum(np.abs(z[get_class_atoms(c,n_class_atoms)])) for c in range(n_classes)] )
-		norm_const = np.sum(np.abs(z))
+    n_classes = len(n_class_atoms)
+    if reg == 'l0':
+        norm_const = z.nonzero()[0].size
+        nom = np.max([z[get_class_atoms(c, n_class_atoms)].nonzero()[0].size for c in range(n_classes)])
+    elif reg == 'l1':
+        nom = np.max([np.sum(np.abs(z[get_class_atoms(c, n_class_atoms)])) for c in range(n_classes)])
+        norm_const = np.sum(np.abs(z))
 
-	sci_index = (n_classes * (nom / norm_const) - 1) / float(n_classes - 1)
-	return sci_index
-
-
-def global_error(X,D,sparse_coder,n_class_atoms,n_jobs=1):
-	"""
-	computes the approximation error of the dataset to
-	each class-specific dictionary. The dataset is first encoded over the
-	joint dictionary.
-	"""
-	n_samples = X.shape[1]
-	predictions = []
-	Z = sparse_coder(X,D)
-	n_samples = X.shape[1]
-	n_classes = len(n_class_atoms)
-	E = np.zeros((n_classes,n_samples))
-
-	if n_jobs > 1:
-		set_openblas_threads(n_jobs)
-
-	for c in range(n_classes):
-		c_idx = get_class_atoms(c,n_class_atoms)
-		E[c,:] = np.sum(np.power(fast_dot(D[:,c_idx],Z[c_idx,:]) - X,2),axis=0)
-
-	if n_jobs > 1:
-		set_openblas_threads(1)
-
-	return E
-
-def local_error(X,D,n_class_atoms,sparse_coder):
-	"""
-	computes the approximation error of the dataset to
-	each class-specific dictionary. Each datapoint is first encoded over the
-	each dictionary seperately.
-	"""
-	n_samples = X.shape[1]
-	n_classes = len(n_class_atoms)
-	E = np.zeros((n_classes,n_samples))
-	for c in range(n_classes):
-		c_idx = get_class_atoms(c,n_class_atoms)
-		Dc = D[:,c_idx]
-		Zc = sparse_coder(X,Dc)
-		E[c,:] = approx_error(Dc,Zc,X)
-	return E
+    sci_index = (n_classes * (nom / norm_const) - 1) / float(n_classes - 1)
+    return sci_index
 
 
+def global_error(X, D, sparse_coder, n_class_atoms, n_jobs=1):
+    """
+    computes the approximation error of the dataset to
+    each class-specific dictionary. The dataset is first encoded over the
+    joint dictionary.
+    """
 
-def global_error_predict(X,D,sparse_coder,n_class_atoms,n_jobs=1):
+    Z = sparse_coder(X, D)
+    n_samples = X.shape[1]
+    n_classes = len(n_class_atoms)
+    E = np.zeros((n_classes, n_samples))
 
-	"""
-	predict the labels of the datapoints in X
-	using a global SRC classifier. In other words, we first encode
-	each datapoint over the joint dictionary D = [D_{1} | ... | D_{C}]
-	and then we assign the datapoint to the class that its dictionary
-	achieves the best approximation.
-	"""
-	E = global_error(X,D,sparse_coder,n_class_atoms,n_jobs=1)
-	n_samples = E.shape[1]
-	predictions = []
-	for i in xrange(n_samples):
-		pred = np.argmin(E[:,i])
-		predictions.append(pred)
+    if n_jobs > 1:
+        set_openblas_threads(n_jobs)
 
-	return predictions
+    for c in range(n_classes):
+        c_idx = get_class_atoms(c, n_class_atoms)
+        E[c, :] = np.sum(np.power(fast_dot(D[:, c_idx], Z[c_idx, :]) - X, 2), axis=0)
 
+    if n_jobs > 1:
+        set_openblas_threads(1)
 
-def global_sparse_predict(X,D,sparse_coder,n_class_atoms):
-
-	"""
-	works in the same way as 'global_error_predict' but
-	we classify according to the sparsest solution
-	"""
-
-	Z = sparse_coder(X,D)
-	n_samples = X.shape[1]
-	n_classes = len(n_class_atoms)
-	predictions = []
-
-	for i in xrange(n_samples):
-		sp = np.zeros((n_classes)).astype(int)
-
-		for c in range(n_classes):
-			c_idx = get_class_atoms(c,n_class_atoms)
-			sp[c] = Z[c_idx,i].nonzero()[0].size
-
-		pred = np.argmin(sp)
-		predictions.append(pred)
-
-	return predictions
+    return E
 
 
-def local_error_predict(X,D,sparse_coder,n_class_atoms):
-
-	"""
-	predict the labels of the datapoints in X
-	using a local SRC classifier. That is, we encode
-	each datapoint in each class-specific dictionary
-	seperately.
-	"""
-
-	n_samples = X.shape[1]
-	n_classes = len(n_class_atoms)
-	E = local_error(X,D,n_class_atoms,sparse_coder)
-
-	predictions = []
-	for i in xrange(n_samples):
-		pred = np.argmin(E[:,i])
-		predictions.append(pred)
-	return predictions
+def local_error(X, D, n_class_atoms, sparse_coder):
+    """
+    computes the approximation error of the dataset to
+    each class-specific dictionary. Each datapoint is first encoded over the
+    each dictionary seperately.
+    """
+    n_samples = X.shape[1]
+    n_classes = len(n_class_atoms)
+    E = np.zeros((n_classes, n_samples))
+    for c in range(n_classes):
+        c_idx = get_class_atoms(c, n_class_atoms)
+        Dc = D[:, c_idx]
+        Zc = sparse_coder(X, Dc)
+        E[c, :] = approx_error(Dc, Zc, X)
+    return E
 
 
-def local_sparse_predict(X,D,sparse_coder,n_class_atoms):
+def global_error_predict(X, D, sparse_coder, n_class_atoms, n_jobs=1):
+    """
+    predict the labels of the datapoints in X
+    using a global SRC classifier. In other words, we first encode
+    each datapoint over the joint dictionary D = [D_{1} | ... | D_{C}]
+    and then we assign the datapoint to the class that its dictionary
+    achieves the best approximation.
+    """
+    E = global_error(X, D, sparse_coder, n_class_atoms, n_jobs=1)
+    n_samples = E.shape[1]
+    predictions = []
+    for i in xrange(n_samples):
+        pred = np.argmin(E[:, i])
+        predictions.append(pred)
 
-	n_samples = X.shape[1]
-	n_classes = len(n_class_atoms)
-	n_total_atoms = np.sum(n_class_atoms)
-	#sparsely encode each datapoint over
-	#each class specific dictionary
-	Z = np.zeros((n_total_atoms,n_samples))
-	for c in range(n_classes):
-
-		c_idx = get_class_atoms(c,n_class_atoms)
-		Zc = sparse_coder(X,D[:,c_idx])
-		Z[c_idx,:] = Zc
-
-	predictions = []
-	for i in xrange(n_samples):
-
-		sp = np.zeros((n_classes)).astype(int)
-		for c in range(n_classes):
-
-			c_idx = get_class_atoms(c,D,n_class_atoms)
-			sp[c] = Z[c_idx,i].nonzero()[0].size
-
-		pred = np.argmin(sp)
-		predictions.append(pred)
-
-	return predictions
+    return predictions
 
 
-def global_src_features(X,D,sparse_coder,n_class_atoms,n_jobs=1):
-	"""
-	return the features for each datapoint which
-	are the approximation errors of the datapoint encoded
-	over each sub-dictionary in D
-	"""
-	E = global_error(X,D,sparse_coder,n_class_atoms,n_jobs=n_jobs)
-	Z_final = norm_cols(E)
-	return Z_final
+def global_sparse_predict(X, D, sparse_coder, n_class_atoms):
+    """
+    works in the same way as 'global_error_predict' but
+    we classify according to the sparsest solution
+    """
 
-def local_src_features(X,D,sparse_coder,n_class_atoms,n_jobs=1):
+    Z = sparse_coder(X, D)
+    n_samples = X.shape[1]
+    n_classes = len(n_class_atoms)
+    predictions = []
 
-	n_samples = X.shape[1]
-	n_classes = len(n_class_atoms)
-	data = [X]
-	args = [D,n_class_atoms,sparse_coder]
-	Z_final = run_parallel(func=local_error,data=data,args=args,batched_args=None,
-							result_shape=(n_classes,n_samples),n_batches=100,mmap=False,msg="building global SRC features",n_jobs=n_jobs)
+    for i in xrange(n_samples):
+        sp = np.zeros((n_classes)).astype(int)
 
-	Z_final = norm_cols(Z_final)
-	return Z_final
+        for c in range(n_classes):
+            c_idx = get_class_atoms(c, n_class_atoms)
+            sp[c] = Z[c_idx, i].nonzero()[0].size
+
+        pred = np.argmin(sp)
+        predictions.append(pred)
+
+    return predictions
 
 
+def local_error_predict(X, D, sparse_coder, n_class_atoms):
+    """
+    predict the labels of the datapoints in X
+    using a local SRC classifier. That is, we encode
+    each datapoint in each class-specific dictionary
+    seperately.
+    """
 
-def src_predict(X,D,n_class_atoms,sparse_coder,method="global",n_jobs=1):
+    n_samples = X.shape[1]
+    n_classes = len(n_class_atoms)
+    E = local_error(X, D, n_class_atoms, sparse_coder)
 
-	"""
-	D contains the sub-dictionaries, i.e
-	D = [D1,...,Dc]
+    predictions = []
+    for i in xrange(n_samples):
+        pred = np.argmin(E[:, i])
+        predictions.append(pred)
+    return predictions
 
-	if n_nonzero_coefs is None then we solve the error constrained
-	problem using the tol parameter and we predict according to the
-	sparsest solution
 
-	if tol is None then we solve the sparsity constrained
-	problem using the n_non_zero_coefs parameter and we predict according to the
-	lowerst approximation error
-	"""
+def local_sparse_predict(X, D, sparse_coder, n_class_atoms):
+    n_samples = X.shape[1]
+    n_classes = len(n_class_atoms)
+    n_total_atoms = np.sum(n_class_atoms)
+    # sparsely encode each datapoint over
+    # each class specific dictionary
+    Z = np.zeros((n_total_atoms, n_samples))
+    for c in range(n_classes):
+        c_idx = get_class_atoms(c, n_class_atoms)
+        Zc = sparse_coder(X, D[:, c_idx])
+        Z[c_idx, :] = Zc
 
-	n_classes = len(n_class_atoms)
-	solve_sparse = solve_error = False
-	if 'n_nonzero_coefs' or 'n_groups' in sparse_coder.params.keys():
-		solve_sparse = True
-	elif 'tol' in sparse_coder.params.keys():
-		solve_error = True
+    predictions = []
+    for i in xrange(n_samples):
 
-	n_samples = X.shape[1]
-	if 'n_groups' in sparse_coder.params.keys():
-		sparse_coder.params["groups"] = [range(c*cl_atoms,(c+1)*cl_atoms) for c,cl_atoms in enumerate(n_class_atoms)]
+        sp = np.zeros((n_classes)).astype(int)
+        for c in range(n_classes):
+            c_idx = get_class_atoms(c, D, n_class_atoms)
+            sp[c] = Z[c_idx, i].nonzero()[0].size
 
-	#calculate the approximation error
-	predictions = None
-	if solve_sparse and method == "global":
-		predictions = global_error_predict(X,D,sparse_coder,n_class_atoms,n_jobs=n_jobs)
-	elif solve_error and method == "global":
-		#func = global_sparse_predict
-		pass
-	if solve_sparse and method == "local":
-		#func = local_error_predict
-		pass
-	elif solve_error and method == "local":
-		#func = local_sparse_predict
-		pass
-	return predictions
+        pred = np.argmin(sp)
+        predictions.append(pred)
+
+    return predictions
+
+
+def global_src_features(X, D, sparse_coder, n_class_atoms, n_jobs=1):
+    """
+    return the features for each datapoint which
+    are the approximation errors of the datapoint encoded
+    over each sub-dictionary in D
+    """
+    E = global_error(X, D, sparse_coder, n_class_atoms, n_jobs=n_jobs)
+    Z_final = norm_cols(E)
+    return Z_final
+
+
+def local_src_features(X, D, sparse_coder, n_class_atoms, n_jobs=1):
+    n_samples = X.shape[1]
+    n_classes = len(n_class_atoms)
+    data = [X]
+    args = [D, n_class_atoms, sparse_coder]
+    Z_final = run_parallel(func=local_error, data=data, args=args, batched_args=None,
+                           result_shape=(n_classes, n_samples), n_batches=100, mmap=False,
+                           msg="building global SRC features", n_jobs=n_jobs)
+
+    Z_final = norm_cols(Z_final)
+    return Z_final
+
+
+def src_predict(X, D, n_class_atoms, sparse_coder, method="global", n_jobs=1):
+    """
+    D contains the sub-dictionaries, i.e
+    D = [D1,...,Dc]
+
+    if n_nonzero_coefs is None then we solve the error constrained
+    problem using the tol parameter and we predict according to the
+    sparsest solution
+
+    if tol is None then we solve the sparsity constrained
+    problem using the n_non_zero_coefs parameter and we predict according to the
+    lowerst approximation error
+    """
+
+    n_classes = len(n_class_atoms)
+    solve_sparse = solve_error = False
+    if 'n_nonzero_coefs' or 'n_groups' in sparse_coder.params.keys():
+        solve_sparse = True
+    elif 'tol' in sparse_coder.params.keys():
+        solve_error = True
+
+    n_samples = X.shape[1]
+    if 'n_groups' in sparse_coder.params.keys():
+        sparse_coder.params["groups"] = [range(c * cl_atoms, (c + 1) * cl_atoms) for c, cl_atoms in
+                                         enumerate(n_class_atoms)]
+
+    # calculate the approximation error
+    predictions = None
+    if solve_sparse and method == "global":
+        predictions = global_error_predict(X, D, sparse_coder, n_class_atoms, n_jobs=n_jobs)
+    elif solve_error and method == "global":
+        # func = global_sparse_predict
+        pass
+    if solve_sparse and method == "local":
+        # func = local_error_predict
+        pass
+    elif solve_error and method == "local":
+        # func = local_sparse_predict
+        pass
+    return predictions
 
 
 from sklearn.grid_search import GridSearchCV
@@ -244,155 +234,141 @@ from sklearn.grid_search import ParameterGrid
 
 
 class src_classifier(classifier):
+    def __init__(self, class_dict_coder=None, n_folds=None,
+                 sparse_coder=None,
+                 n_class_samples=None, n_test_samples=None, n_tests=1,
+                 method="global", mmap=False, n_jobs=1):
 
-	def __init__(self,class_dict_coder=None,n_folds=None,
-				sparse_coder=None,
-				n_class_samples=None,n_test_samples=None,n_tests=1,
-				method="global",mmap=False,n_jobs=1):
+        classifier.__init__(self, n_folds=n_folds,
+                            n_class_samples=n_class_samples, n_test_samples=n_test_samples,
+                            n_tests=n_tests, name=method + '_src_classifier')
 
+        self.class_dict_coder = class_dict_coder
+        self.sparse_coder = sparse_coder
+        # if method='global' then we apply the global SRC classifier
+        # if method='local' then we apply the local SRC classifier
+        self.method = method
+        self.mmap = mmap
+        self.n_jobs = n_jobs
 
-		classifier.__init__(self,n_folds=n_folds,
-				n_class_samples=n_class_samples,n_test_samples=n_test_samples,
-				n_tests=n_tests,name=method+'_src_classifier')
+    def train(self, X_train, y_train, param_set=None):
+        '''train the classifier'''
 
+        n_classes = len(set(y_train))
 
-		self.class_dict_coder = class_dict_coder
-		self.sparse_coder = sparse_coder
-		#if method='global' then we apply the global SRC classifier
-		#if method='local' then we apply the local SRC classifier
-		self.method = method
-		self.mmap = mmap
-		self.n_jobs = n_jobs
+        if self.class_dict_coder is not None:
+            # ksvd in each class dictionary
+            self.class_dict_coder.mmap = self.mmap
+            self.class_dict_coder.n_jobs = self.n_jobs
+            self.D = self.class_dict_coder(X_train, y_train)
+            self.n_class_atoms = self.class_dict_coder.n_class_atoms
+        else:
+            # every datapoint is an atom
+            self.n_class_atoms = (np.zeros(n_classes) + self.n_class_samples).astype(int)
+            n_total_atoms = np.sum(self.n_class_atoms)
+            n_features = X_train.shape[0]
+            D = np.zeros((n_features, n_total_atoms))
+            for c in range(n_classes):
+                x_c = y_train == c
+                Xc = X_train[:, x_c]
+                n_class_samples = Xc.shape[1]
 
+                Dc = init_dictionary(Xc, self.n_class_atoms[c], method='data', normalize=True)
+                base = c * self.n_class_atoms[c]
+                offset = self.n_class_atoms[c]
+                D[:, base:base + offset] = Dc
 
+            self.D = D
 
-	def train(self,X_train,y_train,param_set=None):
-		'''train the classifier'''
+    def predict(self, X_test):
+        '''test the classifier'''
+        self.sparse_coder.mmap = self.mmap
+        self.sparse_coder.n_jobs = self.n_jobs
+        y_pred = src_predict(X_test, self.D, self.n_class_atoms, self.sparse_coder,
+                             method=self.method, n_jobs=self.n_jobs)
 
-		n_classes = len(set(y_train))
-
-
-		if self.class_dict_coder is not None:
-			#ksvd in each class dictionary
-			self.class_dict_coder.mmap = self.mmap
-			self.class_dict_coder.n_jobs = self.n_jobs
-			self.D = self.class_dict_coder(X_train,y_train)
-			self.n_class_atoms = self.class_dict_coder.n_class_atoms
-		else:
-			#every datapoint is an atom
-			self.n_class_atoms = (np.zeros(n_classes) + self.n_class_samples).astype(int)
-			n_total_atoms = np.sum(self.n_class_atoms)
-			n_features = X_train.shape[0]
-			D = np.zeros((n_features,n_total_atoms))
-			for c in range(n_classes):
-
-				x_c = y_train==c
-				Xc = X_train[:,x_c]
-				n_class_samples = Xc.shape[1]
-
-				Dc = init_dictionary(Xc,self.n_class_atoms[c],method='data',normalize=True)
-				base = c*self.n_class_atoms[c]
-				offset = self.n_class_atoms[c]
-				D[:,base:base+offset] = Dc
-
-			self.D = D
-
-	def predict(self,X_test):
-		'''test the classifier'''
-		self.sparse_coder.mmap = self.mmap
-		self.sparse_coder.n_jobs = self.n_jobs
-		y_pred = src_predict(X_test,self.D,self.n_class_atoms,self.sparse_coder,
-							method=self.method,n_jobs=self.n_jobs)
-
-		return y_pred
-
+        return y_pred
 
 
 class src_feature_classifier(classifier):
+    def __init__(self, class_dict_coder=None, n_folds=None,
+                 sparse_coder=None, param_grid=None,
+                 n_class_samples=None, n_test_samples=None, n_tests=1,
+                 method="global", mmap=False, n_jobs=1):
 
-	def __init__(self,class_dict_coder=None,n_folds=None,
-				sparse_coder=None,param_grid=None,
-				n_class_samples=None,n_test_samples=None,n_tests=1,
-				method="global",mmap=False,n_jobs=1):
+        classifier.__init__(self, n_folds=n_folds, param_grid=param_grid,
+                            n_class_samples=n_class_samples, n_test_samples=n_test_samples,
+                            n_tests=n_tests, name=method + 'src_feature_classifier')
 
+        # a class that will do class dictionary learning
+        # of the data
+        self.class_dict_coder = class_dict_coder
+        self.sparse_coder = sparse_coder
+        # if method='global' then we extract global SRC features
+        # if method='local' then we extract local SRC features
+        self.method = method
+        self.mmap = mmap
+        self.n_jobs = n_jobs
+        self.sparse_coder.mmap = self.mmap
+        self.sparse_coder.n_jobs = self.n_jobs
+        self.D = None
+        self.features_extracted = False
+        self.Z_train = None
+        self.Z_test = None
 
+    def train(self, X_train, y_train, param_set=None):
+        '''train the classifier'''
 
-		classifier.__init__(self,n_folds=n_folds,param_grid=param_grid,
-				n_class_samples=n_class_samples,n_test_samples=n_test_samples,
-				n_tests=n_tests,name=method+'src_feature_classifier')
+        n_classes = len(set(y_train))
 
+        if self.D is None:
+            if self.class_dict_coder is not None:
+                # ksvd in each class dictionary
+                self.class_dict_coder.mmap = self.mmap
+                self.class_dict_coder.n_jobs = self.n_jobs
+                self.D = self.class_dict_coder(X_train, y_train)
+                self.n_class_atoms = self.class_dict_coder.n_class_atoms
+            else:
+                # every datapoint is an atom
+                self.n_class_atoms = (np.zeros(n_classes) + self.n_class_samples).astype(int)
+                n_total_atoms = np.sum(self.n_class_atoms)
+                n_features = X_train.shape[0]
+                D = np.zeros((n_features, n_total_atoms))
+                for c in range(n_classes):
+                    x_c = y_train == c
+                    Xc = X_train[:, x_c]
+                    n_class_samples = Xc.shape[1]
 
-		#a class that will do class dictionary learning
-		#of the data
-		self.class_dict_coder = class_dict_coder
-		self.sparse_coder = sparse_coder
-		#if method='global' then we extract global SRC features
-		#if method='local' then we extract local SRC features
-		self.method = method
-		self.mmap = mmap
-		self.n_jobs = n_jobs
-		self.sparse_coder.mmap = self.mmap
-		self.sparse_coder.n_jobs = self.n_jobs
-		self.D = None
-		self.features_extracted = False
-		self.Z_train = None
-		self.Z_test = None
+                    Dc = init_dictionary(Xc, self.n_class_atoms[c], method='data', normalize=True)
+                    base = c * self.n_class_atoms[c]
+                    offset = self.n_class_atoms[c]
+                    D[:, base:base + offset] = Dc
 
+                self.D = D
 
-	def train(self,X_train,y_train,param_set=None):
-		'''train the classifier'''
+        from lyssa.classify import linear_svm
+        self.lsvm = linear_svm()
 
-		n_classes = len(set(y_train))
+        # if not self.features_extracted:
+        if self.method == "global":
+            self.Z_train = global_src_features(X_train, self.D, self.sparse_coder, self.n_class_atoms,
+                                               n_jobs=self.n_jobs)
+        elif self.method == "local":
+            pass
+        # self.features_extracted = True
+        self.lsvm.train(self.Z_train, y_train, param_set=param_set)
 
-		if self.D is None:
-			if self.class_dict_coder is not None:
-				#ksvd in each class dictionary
-				self.class_dict_coder.mmap = self.mmap
-				self.class_dict_coder.n_jobs = self.n_jobs
-				self.D = self.class_dict_coder(X_train,y_train)
-				self.n_class_atoms = self.class_dict_coder.n_class_atoms
-			else:
-				#every datapoint is an atom
-				self.n_class_atoms = (np.zeros(n_classes) + self.n_class_samples).astype(int)
-				n_total_atoms = np.sum(self.n_class_atoms)
-				n_features = X_train.shape[0]
-				D = np.zeros((n_features,n_total_atoms))
-				for c in range(n_classes):
+    def predict(self, X_test):
+        '''test the classifier'''
+        # if not self.features_extracted:
+        if self.method == "global":
+            self.Z_test = global_src_features(X_test, self.D, self.sparse_coder, self.n_class_atoms, n_jobs=self.n_jobs)
+        elif self.method == "local":
+            pass
+        # self.features_extracted = True
+        y_pred = self.lsvm.predict(self.Z_test)
 
-					x_c = y_train==c
-					Xc = X_train[:,x_c]
-					n_class_samples = Xc.shape[1]
-
-					Dc = init_dictionary(Xc,self.n_class_atoms[c],method='data',normalize=True)
-					base = c*self.n_class_atoms[c]
-					offset = self.n_class_atoms[c]
-					D[:,base:base+offset] = Dc
-
-				self.D = D
-
-		from lyssa.classify import linear_svm
-		self.lsvm = linear_svm()
-
-		#if not self.features_extracted:
-		if self.method == "global":
-			self.Z_train = global_src_features(X_train,self.D,self.sparse_coder,self.n_class_atoms,n_jobs=self.n_jobs)
-		elif self.method == "local":
-			pass
-		#	self.features_extracted = True
-		self.lsvm.train(self.Z_train,y_train,param_set=param_set)
-
-	def predict(self,X_test):
-		'''test the classifier'''
-		#if not self.features_extracted:
-		if self.method == "global":
-			self.Z_test = global_src_features(X_test,self.D,self.sparse_coder,self.n_class_atoms,n_jobs=self.n_jobs)
-		elif self.method == "local":
-			pass
-		#self.features_extracted = True
-		y_pred = self.lsvm.predict(self.Z_test)
-
-		return y_pred
-
+        return y_pred
 
 
 """
@@ -443,15 +419,12 @@ def atom_quality(Z,y,sparse_coder,n_class_atoms,mode=0):
 	return atom_scores
 """
 
-
-
-
-#extracts features in this way:
-#for each datapoint:
+# extracts features in this way:
+# for each datapoint:
 # extract the feature vector [e_{1},...,e_{C}]
-#where e_{c} is the approximation error of the datapoint
-#coded over the cth class dictionary
-#it can be based on local or global SRC
+# where e_{c} is the approximation error of the datapoint
+# coded over the cth class dictionary
+# it can be based on local or global SRC
 """
 class src_feature_extractor(classifier):
 

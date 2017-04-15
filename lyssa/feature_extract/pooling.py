@@ -25,19 +25,23 @@ sparse codes in Z(each stored in a column)
 
 """
 
+
 class sc_max_pooling:
-	def __call__(self,Z):
-		return np.max(np.abs(Z),axis=1)
+    def __call__(self, Z):
+        return np.max(np.abs(Z), axis=1)
+
 
 class max_pooling:
-	def __call__(self,Z):
-		return np.max(Z,axis=1)
+    def __call__(self, Z):
+        return np.max(Z, axis=1)
+
 
 class sum_pooling:
-	def __call__(self,Z):
-		return np.sum(Z,axis=1)
+    def __call__(self, Z):
+        return np.sum(Z, axis=1)
+
 
 class average_pooling:
-	def __call__(self,Z):
-		n_descriptors = Z.shape[1]
-		return np.sum(Z,axis=1) / float(n_descriptors)
+    def __call__(self, Z):
+        n_descriptors = Z.shape[1]
+        return np.sum(Z, axis=1) / float(n_descriptors)
