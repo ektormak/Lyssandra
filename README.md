@@ -23,16 +23,14 @@ A collection of Python tools for feature extraction and image classification usi
 
 ## Installation ##
 
-This package has the following dependencies:
+Install the dependencies using:
 
-* numpy
-* scipy
-* scikit-learn
-* matplotlib (optional)
-* Pillow
-* for LASSO problems, the Python version of SPAMS http://spams-devel.gforge.inria.fr/index.html
-  must be installed in your system
-* OpenBLAS (optional)
+`pip install -r requirements.txt`
+
+
+For LASSO problems, the Python version of SPAMS http://spams-devel.gforge.inria.fr/index.html
+must be installed in your system.
+
 
 First edit config.yml to specify the
 * workspace path, in which, the outputs of feature extraction tasks will be saved
