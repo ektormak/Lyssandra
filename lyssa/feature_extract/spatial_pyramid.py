@@ -10,7 +10,7 @@ class dsift_extractor():
     def __init__(self, step_size=None, patch_size=None):
         # self.step_size = step_size
         self.patch_size = patch_size
-        self.extractor = DsiftExtractor(gridSpacing=step_size, patchSize=patch_size)
+        self.extractor = DsiftExtractor(grid_spacing=step_size, patch_size=patch_size)
 
     def extract(self, img):
         dsift_patches, pos = self.extractor.process_image(img, positionNormalize=False)

@@ -4,11 +4,12 @@ import numpy as np
 
 """
 A module that implements class-specific dictionary learning using the KSVD algorithm. For
-a dataset with C classes, it learns C dictionaries seperately as in
+a dataset with C classes, it learns C dictionaries separately as in:
+
 "Metaface learning for sparse representation based face recognition" of Yang et al.
 
 TODO: make the class 'class_ksvd_coder' more general so that the user can specify
-	  any of the available Dictionary Learning algorithms.
+      any of the available Dictionary Learning algorithms.
 """
 
 
