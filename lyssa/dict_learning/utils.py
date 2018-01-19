@@ -33,10 +33,7 @@ def select_datapoints(X):
 
 
 def init_dictionary(X, n_atoms, method='data', return_unused_data=False, normalize=True):
-    """
-    create the initial dictionary with n_atoms
-    method: can be {data,svd,random}
-    """
+    """ create the initial dictionary with n_atoms method: can be {data,svd,random}"""
     if method == "svd":
         from numpy.linalg import svd
         D, S, Z = svd(X, full_matrices=False)

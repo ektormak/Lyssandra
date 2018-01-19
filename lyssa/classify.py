@@ -2,9 +2,8 @@ import numpy as np
 from utils.dataset import split_dataset
 import abc
 from sklearn import svm
-from sklearn.grid_search import GridSearchCV, ParameterGrid
+from sklearn.grid_search import ParameterGrid
 from sklearn.cross_validation import StratifiedKFold
-from sklearn.metrics import classification_report
 
 
 def class_accuracy(y_pred, y_test):

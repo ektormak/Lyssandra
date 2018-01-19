@@ -2,15 +2,11 @@ from __future__ import division
 import matplotlib.pyplot as plt
 
 from lyssa.dict_learning import ksvd_coder, online_dictionary_coder
-from PIL import Image
 from lyssa.sparse_coding import sparse_encoder
-from lyssa.feature_extract.preproc import preproc, ZCA, local_contrast_normalization
-from lyssa.utils.img import add_noise, grid_patches, extract_patches
+from lyssa.feature_extract.preproc import preproc
+from lyssa.utils.img import extract_patches
 
-from lyssa.utils import get_images, get_mmap
-import time
-from lyssa.dict_learning.utils import approx_error, average_mutual_coherence
-from lyssa.utils import get_workspace
+from lyssa.utils import get_images
 from sklearn.datasets import fetch_lfw_people
 
 

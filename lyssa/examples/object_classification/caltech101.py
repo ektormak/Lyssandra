@@ -1,7 +1,5 @@
-import numpy as np
 from lyssa.classify import linear_svm
 from lyssa.utils import get_workspace
-from lyssa.utils import img_dataset
 from lyssa.sparse_coding import sparse_encoder
 from lyssa.dict_learning import class_ksvd_coder
 from lyssa.dict_learning.lc_ksvd import lc_ksvd_classifier

@@ -1,7 +1,7 @@
-from lyssa.utils import fast_dot, gen_even_batches, gen_batches
+from lyssa.utils import fast_dot, gen_batches
 import numpy as np
 import sys
-from .utils import init_dictionary, normalize, norm_cols, approx_error
+from .utils import init_dictionary, norm_cols, approx_error
 from itertools import cycle
 from lyssa.utils import set_openblas_threads, get_mmap
 

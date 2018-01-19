@@ -1,13 +1,10 @@
 from __future__ import division
 import numpy as np
-from numpy.linalg import inv, solve
 import time
-from lyssa.utils import get_mmap, get_empty_mmap, split_dataset
-from lyssa.utils.math import fast_dot, norm, normalize, norm_cols
-from .utils import approx_error, get_class_atoms, force_mi, average_mutual_coherence
-from scipy.linalg import svd
+from lyssa.utils import get_mmap
+from lyssa.utils.math import fast_dot, norm, normalize
+from .utils import approx_error, force_mi, average_mutual_coherence
 from sklearn.utils.extmath import randomized_svd
-from lyssa.classify import classifier
 import warnings
 import sys
 from lyssa.utils import set_openblas_threads

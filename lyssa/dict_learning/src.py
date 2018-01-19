@@ -228,11 +228,6 @@ def src_predict(X, D, n_class_atoms, sparse_coder, method="global", n_jobs=1):
     return predictions
 
 
-from sklearn.grid_search import GridSearchCV
-from sklearn.cross_validation import StratifiedKFold
-from sklearn.grid_search import ParameterGrid
-
-
 class src_classifier(classifier):
     def __init__(self, class_dict_coder=None, n_folds=None,
                  sparse_coder=None,

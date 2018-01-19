@@ -33,7 +33,7 @@ must be installed in your system.
 
 
 First edit config.yml to specify the
-* workspace path, in which, the outputs of feature extraction tasks will be saved
+* workspace path, the location of the directory in which outputs of feature extraction tasks will be saved
 * path to OpenBLAS in your system (optional)
 
 and then do:
