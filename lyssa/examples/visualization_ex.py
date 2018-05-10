@@ -26,23 +26,23 @@ def whitened_rgb_atoms():
         imgs.append(img)
     """
 
-    patch_shape = (8,8)
+    patch_shape = (8, 8)
     n_atoms = 100
     n_plot_atoms = 100
     n_nonzero_coefs = 1
 
     print 'Extracting reference patches...'
-    X = extract_patches(imgs, patch_size=patch_shape[0],scale=False,n_patches=int(5e5),mem="low")
-    print "number of patches:",X.shape[1]
+    X = extract_patches(imgs, patch_size=patch_shape[0], scale=False, n_patches=int(5e5), mem="low")
+    print "number of patches:", X.shape[1]
 
     wn = preproc("whitening")
     from lyssa.feature_extract.preproc import local_contrast_normalization
     #apply lcn and then whiten the patches
     X = wn(local_contrast_normalization(X))
     #learn the dictionary using Batch Orthognal Matching Pursuit and KSVD
-    se = sparse_encoder(algorithm='bomp',params={'n_nonzero_coefs':n_nonzero_coefs},n_jobs=8)
-    kc = ksvd_coder(n_atoms=n_atoms,sparse_coder=se,init_dict = "data",
-                    max_iter=10,verbose=True,approx=False,n_jobs=8)
+    se = sparse_encoder(algorithm='bomp', params={'n_nonzero_coefs': n_nonzero_coefs}, n_jobs=8)
+    kc = ksvd_coder(n_atoms=n_atoms, sparse_coder=se, init_dict="data",
+                    max_iter=3, verbose=True, approx=False, n_jobs=8)
 
     kc.fit(X)
     D = kc.D
@@ -96,5 +96,5 @@ def dictionary_learn_ex():
 
 
 if __name__ == '__main__':
-    #whitened_rgb_atoms()
-    dictionary_learn_ex()
+    whitened_rgb_atoms()
+    #dictionary_learn_ex()

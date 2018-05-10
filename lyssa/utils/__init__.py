@@ -69,10 +69,9 @@ def run_parallel(func=None, data=None, args=None, batched_args=None,
                 Z = np.zeros(result_shape)
             result_is_array = True
         else:
-            #result shape is an integer which
-            #implies that result will be a list
+            # result shape is an integer which implies that result will be a list
             Z = np.zeros(result_shape)
-            result_is_array =  False
+            result_is_array = False
     else:
         Z = None
 
@@ -112,9 +111,7 @@ def run_parallel(func=None, data=None, args=None, batched_args=None,
             end = idx[i][-1]+1
             data_batch = data[start:end]
 
-
-        #assume that batched args
-        #are not keyword arguments
+        # assume that batched args are not keyword arguments
         _args = [data_batch]
         for j in range(n_batched_args):
             batched_arg = batched_args[j]
@@ -129,15 +126,14 @@ def run_parallel(func=None, data=None, args=None, batched_args=None,
             _args.append(batched_arg)
 
         _args += list(args)
-        results.append( (i,pool.apply_async(func, _args)) )
+        results.append((i, pool.apply_async(func, _args)))
 
-    time_per_task = 0
     n_tasks = n_batches
     t_start = time()
     eta_string = ""
     for i, result in results:
         if msg is not None:
-            sys.stdout.write("\r"+msg+"...:%3.2f%%" % (( i / float(n_batches))*100)+eta_string)
+            sys.stdout.write("\r"+msg+": %3.2f%%" % ((i / float(n_batches))*100)+eta_string)
             sys.stdout.flush()
         rs = result.get()
         if rs is not None:
@@ -157,12 +153,11 @@ def run_parallel(func=None, data=None, args=None, batched_args=None,
             eta = incomplete_count * time_per_task
             mins, secs = divmod(eta, 60)
             hours, mins = divmod(mins, 60)
-            #"%d:%02d:%02d" % (h, m, s)
-            eta_string = " ,eta=%02d:%02d:%02d" % (hours,mins,secs)
+            eta_string = ", eta=%02d:%02d:%02d" % (hours, mins, secs)
 
     pool.close()
     if msg is not None:
-        sys.stdout.write("\r"+msg+"...:%3.2f%%" % (100))
+        sys.stdout.write("\r"+msg+": %3.2f%%" % (100))
         sys.stdout.flush()
         print ""
     return Z
@@ -192,8 +187,7 @@ def gen_batches(N, batch_size=None):
     """
 
     if batch_size is not None:
-
-        n_batches =  int(np.floor(N / float(batch_size)))
+        n_batches = int(np.floor(N / float(batch_size)))
         batches_idx = []
         base = 0
         for j in range(n_batches):
@@ -206,7 +200,7 @@ def gen_batches(N, batch_size=None):
 
 
 def get_image(filename):
-    dirname = os.path.join(os.path.dirname(packagedir), 'lyssa','utils', 'data_files')
+    dirname = os.path.join(os.path.dirname(packagedir), 'lyssa', 'utils', 'data_files')
     img_path = os.path.join(dirname, filename)
     return np.asarray(Image.open(img_path))
 
@@ -252,29 +246,6 @@ def get_images(exclude=None,colored=False):
         img = get_image(files[i])
         imgs.append(img)
     return imgs
-
-
-def monitor_progress(results=None,n_tasks=None,message=None):
-
-    from time import time
-    time_per_task = 0
-    t_start = time()
-    while True:
-        complete_count = np.sum([1 for result in results if result.ready()])
-        if complete_count == n_tasks:
-            break
-        duration = time() - t_start
-        if complete_count != 0:
-            time_per_task = duration / float(complete_count)
-        incomplete_count = n_tasks - complete_count
-        eta = incomplete_count * time_per_task
-        mins, secs = divmod(eta, 60)
-        hours, mins = divmod(mins, 60)
-        #"%d:%02d:%02d" % (h, m, s)
-        eta_string = " ,eta=%02d:%02d:%02d" % (hours, mins, secs)
-        sys.stdout.write("\r"+message+":%3.2f%%" % ((complete_count / float(n_tasks))*100)+eta_string)
-        sys.stdout.flush()
-    print ""
 
 
 def joblib_print(n_tasks,msg):

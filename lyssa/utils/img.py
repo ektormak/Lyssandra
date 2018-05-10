@@ -6,31 +6,31 @@ from PIL import Image
 from functools import partial
 
 
-def resize_img(img_arr,scale=None,maxdim=None):
+def resize_img(img_arr, scale=None, maxdim=None):
     """
     if maxdim is not none
     resizes the image such that width and height are less than
     maxdim(preserving aspect ratio)
     """
     if maxdim is not None:
-        imdim = max(img_arr.shape[0],img_arr.shape[1])
+        imdim = max(img_arr.shape[0], img_arr.shape[1])
         if imdim > maxdim:
-            scaler = float(maxdim)/ float(imdim)
+            scaler = float(maxdim) / float(imdim)
             new_h = int(round(scaler*img_arr.shape[0]))
             new_w = int(round(scaler*img_arr.shape[1]))
     elif scale is not None:
         new_h = int(round(scale*img_arr.shape[0]))
         new_w = int(round(scale*img_arr.shape[1]))
     import PIL
-    img =  PIL.Image.fromarray(np.uint8(img_arr))
-    img = img.resize((new_w,new_h))
+    img = PIL.Image.fromarray(np.uint8(img_arr))
+    img = img.resize((new_w, new_h))
     img_arr  = np.array(img)
     return img_arr
 
 
 def horizontal_reflection(img):
     #flips an image horizontally
-    if isinstance(img,(np.ndarray,np.core.memmap)):
+    if isinstance(img,(np.ndarray, np.core.memmap)):
         img = np.array(Image.fromarray(img).transpose(Image.FLIP_LEFT_RIGHT))
     else:
         img = img.transpose(Image.FLIP_LEFT_RIGHT)
@@ -65,6 +65,7 @@ def rgb_vec_to_img(img_vec,patch_shape,normalized=False):
     return img
 """
 
+
 def scale_img(img):
 
     if np.max(img) > 1:
@@ -72,7 +73,8 @@ def scale_img(img):
     else:
         return img
 
-def MSE(reconstructed,image):
+
+def MSE(reconstructed, image):
     reconstructed = scale_img(reconstructed)
     image = scale_img(image)
     return (1 / float(image.size)) * np.sum( np.power(reconstructed - image,2) )

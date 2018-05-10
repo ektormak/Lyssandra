@@ -1,9 +1,8 @@
 import numpy as np
 from lyssa.utils.math import fast_dot
-import abc
 from lyssa.classify import classifier
 from lyssa.utils import norm_cols, set_openblas_threads, run_parallel
-from lyssa.dict_learning.utils import normalize, get_class_atoms, approx_error, init_dictionary
+from lyssa.dict_learning.utils import get_class_atoms, approx_error, init_dictionary
 
 """
 A module that implements the classification system of
