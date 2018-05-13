@@ -2,7 +2,7 @@ from lyssa.utils.dataset import img_dataset
 from lyssa.utils.workspace import workspace_manager
 from lyssa.sparse_coding import sparse_encoder
 from lyssa.dict_learning import online_dictionary_coder
-from lyssa.feature_extract.spatial_pyramid import sift_extractor, dsift_extractor, spatial_pyramid, sc_spm_extractor
+from lyssa.feature_extract.spatial_pyramid import dsift_extractor, spatial_pyramid, sc_spm_extractor
 from lyssa.feature_extract.pooling import sc_max_pooling
 from lyssa.feature_extract.preproc import l2_normalizer
 
@@ -15,7 +15,7 @@ for Image Classification" for the details of the algorithm.
 
 def ScSPM_caltech101_l1():
     # path to the Caltech101 dataset
-    # data_path =
+    data_path = "Caltech101/"
     imd = img_dataset(data_path, maxdim=300, online=True, color=param_set.get("color"))
     imgs = imd()
     y = imd.y

@@ -262,8 +262,8 @@ class hmp_network():
 
     def build_feature_maps(self, layer):
 
-        if (not self.workspace.contains(os.path.join("layer" + str(layer), "dict.npy"))) and self.pretrained_dicts[
-            layer] is None:
+        if (not self.workspace.contains(os.path.join("layer" + str(layer), "dict.npy"))) and \
+                        self.pretrained_dicts[layer] is None:
             D = self.learn_dict(layer)
         elif self.pretrained_dicts[layer] is not None:
             D = self.pretrained_dicts[layer]
@@ -283,8 +283,6 @@ class hmp_network():
             if not os.path.exists(os.path.join(self.workspace.base_path, feature_maps_path)):
                 os.makedirs(os.path.join(self.workspace.base_path, feature_maps_path))
             n_imgs = len(self.imgs[layer])
-            is_grayscale = len(self.imgs[layer][0].shape) == 2
-            patch_size = self.filter_sizes[layer]
             idxs = [(len(str(n_imgs)) - len(str(i))) * '0' + str(i) for i in range(n_imgs)]
             if layer == 0:
                 batch_size = 100
@@ -352,7 +350,6 @@ class hmp_network():
             n_features = self.n_atoms[layer]
             # pre-allocate
             Z_final = np.zeros((n_total_cells * n_features, n_imgs))
-            patch_size = self.filter_sizes[layer]
 
             spp = True
 

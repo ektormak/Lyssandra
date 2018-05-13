@@ -368,49 +368,49 @@ class src_feature_classifier(classifier):
 """
 def atom_quality(Z,y,sparse_coder,n_class_atoms,mode=0):
 
-	print "measuring atom quality"
-	#idea1: find the fraction of the datapoints that use each atom
-	# and are in the same class with the total number of datapoints that
-	# use this atom
-	#idea2: for each atom contruct a weighted average using the datapoints
-	# that belong to a class different than it. The weights are equal
-	# to the absolute value of the coefficients these datapoints have
-	# for this atom
-	n_classes = len(n_class_atoms)
-	atom_scores = np.zeros(np.sum(n_class_atoms))
-	for c in range(n_classes):
+    print "measuring atom quality"
+    #idea1: find the fraction of the datapoints that use each atom
+    # and are in the same class with the total number of datapoints that
+    # use this atom
+    #idea2: for each atom contruct a weighted average using the datapoints
+    # that belong to a class different than it. The weights are equal
+    # to the absolute value of the coefficients these datapoints have
+    # for this atom
+    n_classes = len(n_class_atoms)
+    atom_scores = np.zeros(np.sum(n_class_atoms))
+    for c in range(n_classes):
 
-		class_idx = np.where(y==c)[0]
-		atoms_idx = get_class_atoms(c,n_class_atoms)
-		#for each atom in this class
-		for atom_idx in atoms_idx:
-			#find the indices of the datapoints that
-			#use this atom
-			data_idx = Z[atom_idx,:].nonzero()[0]
-			if mode == 0:
-				if len(data_idx) == 0:
-					#this atom is not used
-					continue
-				#find the number of datapoints that use this
-				#atom and are in the same class
-				n_correct = len(set(data_idx).intersection(class_idx))
-				n_total = len(data_idx)
-				#print atom_idx
-				#idea1:
-				atom_score = n_correct / float(n_total)
-			elif mode == 1:
+        class_idx = np.where(y==c)[0]
+        atoms_idx = get_class_atoms(c,n_class_atoms)
+        #for each atom in this class
+        for atom_idx in atoms_idx:
+            #find the indices of the datapoints that
+            #use this atom
+            data_idx = Z[atom_idx,:].nonzero()[0]
+            if mode == 0:
+                if len(data_idx) == 0:
+                    #this atom is not used
+                    continue
+                #find the number of datapoints that use this
+                #atom and are in the same class
+                n_correct = len(set(data_idx).intersection(class_idx))
+                n_total = len(data_idx)
+                #print atom_idx
+                #idea1:
+                atom_score = n_correct / float(n_total)
+            elif mode == 1:
 
-				#idea2:
-				#find all the datapoints that use this atom but belong to
-				#a different class
-				diff_idx = set(data_idx).difference(set(class_idx))
-				if len(diff_idx) == 0:
-					continue
-				#find the coeffs in absolute value
-				atom_score = - float( np.sum(np.abs(Z[atom_idx,list(diff_idx) ])) )
+                #idea2:
+                #find all the datapoints that use this atom but belong to
+                #a different class
+                diff_idx = set(data_idx).difference(set(class_idx))
+                if len(diff_idx) == 0:
+                    continue
+                #find the coeffs in absolute value
+                atom_score = - float( np.sum(np.abs(Z[atom_idx,list(diff_idx) ])) )
 
-			atom_scores[atom_idx] = atom_score
-	return atom_scores
+            atom_scores[atom_idx] = atom_score
+    return atom_scores
 """
 
 # extracts features in this way:
@@ -422,155 +422,155 @@ def atom_quality(Z,y,sparse_coder,n_class_atoms,mode=0):
 """
 class src_feature_extractor(classifier):
 
-	def __init__(self,class_dict_coder=None,n_nonzero_coefs=None,tol=None
-				,approx=True,n_folds=None,n_class_samples=None,n_test_samples=None,n_tests=1,
-				method="global",mmap=False,n_jobs=1):
+    def __init__(self,class_dict_coder=None,n_nonzero_coefs=None,tol=None
+                ,approx=True,n_folds=None,n_class_samples=None,n_test_samples=None,n_tests=1,
+                method="global",mmap=False,n_jobs=1):
 
 
-		classifier.__init__(self,n_folds=n_folds,
-				n_class_samples=n_class_samples,n_test_samples=n_test_samples,
-				n_tests=n_tests,name='src_feature_classifier')
+        classifier.__init__(self,n_folds=n_folds,
+                n_class_samples=n_class_samples,n_test_samples=n_test_samples,
+                n_tests=n_tests,name='src_feature_classifier')
 
 
-		#a class that will do class dictionary learning
-		#of the data
-		self.class_dict_coder = class_dict_coder
-		self.n_nonzero_coefs = n_nonzero_coefs
-		self.tol = tol
-		self.approx = approx
-		#if method='global' then we apply the global SRC classifier
-		#if method='local' then we apply the local SRC classifier
-		self.method = method
-		self.mmap = mmap
-		self.class_dict_coder.mmap = self.mmap
-		self.n_jobs = n_jobs
-
-
-
-	def train(self,X_train,y_train):
-		'''train the classifier'''
-
-		n_classes = len(set(y_train))
-		if self.n_nonzero_coefs is not None:
-			sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':self.n_nonzero_coefs},
-												mmap=self.mmap,n_jobs=self.n_jobs)
-		elif self.tol is not None:
-			sparse_coder = sparse_encoder(algorithm='ormp',params={'tol':self.tol},
-												mmap=self.mmap,n_jobs=self.n_jobs)
-
-		self.param_grid = [ {'C': [1e-3,1e-2,5e-2,1e-1,1,10,50]} ]
-
-
-		#THE TRAINING:
-		#learn a dictionary per class using ksvd
-		#and merge the subdictionaries to D
-		D = self.class_dict_coder(X_train,y_train)
-		n_class_atoms = self.class_dict_coder.n_class_atoms
-
-		if self.method == "global":
-			Z = global_src_features(X,D,y_train,sparse_coder,
-				n_class_atoms,train_idx,test_idx,n_jobs=self.n_jobs)
-		elif self.method == "local":
-			Z = local_src_features(X,D,sparse_coder,n_class_atoms,n_jobs=self.n_jobs)
-
-		Z_train = Z[:,train_idx]
-		Z_test = Z[:,test_idx]
-
-		self.clf.fit(Z_train.T,y_train)
+        #a class that will do class dictionary learning
+        #of the data
+        self.class_dict_coder = class_dict_coder
+        self.n_nonzero_coefs = n_nonzero_coefs
+        self.tol = tol
+        self.approx = approx
+        #if method='global' then we apply the global SRC classifier
+        #if method='local' then we apply the local SRC classifier
+        self.method = method
+        self.mmap = mmap
+        self.class_dict_coder.mmap = self.mmap
+        self.n_jobs = n_jobs
 
 
 
-	def predict(self,X_test):
-		'''test the classifier'''
-		y_pred = clf.predict(Z_test.T)
+    def train(self,X_train,y_train):
+        '''train the classifier'''
 
-		return y_pred
+        n_classes = len(set(y_train))
+        if self.n_nonzero_coefs is not None:
+            sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':self.n_nonzero_coefs},
+                                                mmap=self.mmap,n_jobs=self.n_jobs)
+        elif self.tol is not None:
+            sparse_coder = sparse_encoder(algorithm='ormp',params={'tol':self.tol},
+                                                mmap=self.mmap,n_jobs=self.n_jobs)
+
+        self.param_grid = [ {'C': [1e-3,1e-2,5e-2,1e-1,1,10,50]} ]
+
+
+        #THE TRAINING:
+        #learn a dictionary per class using ksvd
+        #and merge the subdictionaries to D
+        D = self.class_dict_coder(X_train,y_train)
+        n_class_atoms = self.class_dict_coder.n_class_atoms
+
+        if self.method == "global":
+            Z = global_src_features(X,D,y_train,sparse_coder,
+                n_class_atoms,train_idx,test_idx,n_jobs=self.n_jobs)
+        elif self.method == "local":
+            Z = local_src_features(X,D,sparse_coder,n_class_atoms,n_jobs=self.n_jobs)
+
+        Z_train = Z[:,train_idx]
+        Z_test = Z[:,test_idx]
+
+        self.clf.fit(Z_train.T,y_train)
+
+
+
+    def predict(self,X_test):
+        '''test the classifier'''
+        y_pred = clf.predict(Z_test.T)
+
+        return y_pred
 
 
 class supervised_src_classifier(classifier):
 
-	def __init__(self,class_dict_coder=None,n_nonzero_coefs=None,tol=None,n_folds=None,
-				sparse_coder=None,
-				n_class_samples=None,n_test_samples=None,n_tests=1,
-				approx=True,method="global",mmap=False,n_jobs=1):
+    def __init__(self,class_dict_coder=None,n_nonzero_coefs=None,tol=None,n_folds=None,
+                sparse_coder=None,
+                n_class_samples=None,n_test_samples=None,n_tests=1,
+                approx=True,method="global",mmap=False,n_jobs=1):
 
-		classifier.__init__(self,n_folds=n_folds,
-				n_class_samples=n_class_samples,n_test_samples=n_test_samples,
-				n_tests=n_tests,name='src_classifier')
-
-
-		#a class that will do class dictionary learning
-		#of the data
-		self.class_dict_coder = class_dict_coder
-		self.sparse_coder = sparse_coder
-		#self.n_folds = n_folds
-		#the number of training samples to use
-		#per class (the rest are testing). some
-		#papers use this method instead of cross validation (e.g the LC KSVD paper)
-		#self.n_class_samples = n_class_samples
-		#maximum number of test samples
-		#self.n_test_samples = n_test_samples
-		self.n_nonzero_coefs = n_nonzero_coefs
-		self.tol = tol
-		self.approx = approx
-		#if method='global' then we apply the global SRC classifier
-		#if method='local' then we apply the local SRC classifier
-		self.method = method
-		self.mmap = mmap
-		self.class_dict_coder.mmap = self.mmap
-		self.n_jobs = n_jobs
-
-		self.D_common = None
+        classifier.__init__(self,n_folds=n_folds,
+                n_class_samples=n_class_samples,n_test_samples=n_test_samples,
+                n_tests=n_tests,name='src_classifier')
 
 
+        #a class that will do class dictionary learning
+        #of the data
+        self.class_dict_coder = class_dict_coder
+        self.sparse_coder = sparse_coder
+        #self.n_folds = n_folds
+        #the number of training samples to use
+        #per class (the rest are testing). some
+        #papers use this method instead of cross validation (e.g the LC KSVD paper)
+        #self.n_class_samples = n_class_samples
+        #maximum number of test samples
+        #self.n_test_samples = n_test_samples
+        self.n_nonzero_coefs = n_nonzero_coefs
+        self.tol = tol
+        self.approx = approx
+        #if method='global' then we apply the global SRC classifier
+        #if method='local' then we apply the local SRC classifier
+        self.method = method
+        self.mmap = mmap
+        self.class_dict_coder.mmap = self.mmap
+        self.n_jobs = n_jobs
 
-	def train(self,X_train,y_train):
-		'''train the classifier'''
-		n_classes = len(set(y_train))
-		if self.n_nonzero_coefs is not None:
-			self.sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':self.n_nonzero_coefs},
-												mmap=self.mmap,n_jobs=1)
-		elif self.tol is not None:
-			self.sparse_coder = sparse_encoder(algorithm='ormp',params={'tol':self.tol},
-												mmap=self.mmap,n_jobs=1)
-
-		#training
-		D = self.class_dict_coder(X_train,y_train)
-		self.n_class_atoms = self.class_dict_coder.n_class_atoms
-
-		from lyssa.dict_learn.experimental import find_bad_atoms
-		atom_scores = find_bad_atoms(X_train,D,y_train,sparse_coder=self.sparse_coder,
-							n_class_atoms=self.n_class_atoms,threshold=None)
-
-		self.D_common = D[:,atom_scores[:500]]
-		Z_common = self.sparse_coder(X_train,self.D_common)
-		R = X_train - np.dot(self.D_common,Z_common)
-
-		sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':3},
-											mmap=self.mmap,n_jobs=1)
-
-		from lyssa.dict_learn.ksvd import class_ksvd_coder
-		ckc = class_ksvd_coder(atom_ratio=0.2,sparse_coder=sparse_coder,
-						max_iter=3,approx=False,verbose=False,n_jobs=1)
-		self.D = ckc(R,y_train)
-		self.n_class_atoms = ckc.n_class_atoms
-		#import pdb
-		#pdb.set_trace()
-		#testing
+        self.D_common = None
 
 
 
-	def predict(self,X_test):
-		'''test the classifier'''
+    def train(self,X_train,y_train):
+        '''train the classifier'''
+        n_classes = len(set(y_train))
+        if self.n_nonzero_coefs is not None:
+            self.sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':self.n_nonzero_coefs},
+                                                mmap=self.mmap,n_jobs=1)
+        elif self.tol is not None:
+            self.sparse_coder = sparse_encoder(algorithm='ormp',params={'tol':self.tol},
+                                                mmap=self.mmap,n_jobs=1)
 
-		Z_common = self.sparse_coder(X_test,self.D_common)
-		R = X_test - np.dot(self.D_common,Z_common)
+        #training
+        D = self.class_dict_coder(X_train,y_train)
+        self.n_class_atoms = self.class_dict_coder.n_class_atoms
 
-		sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':3},
-											mmap=self.mmap,n_jobs=1)
+        from lyssa.dict_learn.experimental import find_bad_atoms
+        atom_scores = find_bad_atoms(X_train,D,y_train,sparse_coder=self.sparse_coder,
+                            n_class_atoms=self.n_class_atoms,threshold=None)
 
-		y_pred = src_predict(R,self.D,self.n_class_atoms,sparse_coder,
-							method=self.method,n_jobs=self.n_jobs)
+        self.D_common = D[:,atom_scores[:500]]
+        Z_common = self.sparse_coder(X_train,self.D_common)
+        R = X_train - np.dot(self.D_common,Z_common)
 
-		return y_pred
+        sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':3},
+                                            mmap=self.mmap,n_jobs=1)
+
+        from lyssa.dict_learn.ksvd import class_ksvd_coder
+        ckc = class_ksvd_coder(atom_ratio=0.2,sparse_coder=sparse_coder,
+                        max_iter=3,approx=False,verbose=False,n_jobs=1)
+        self.D = ckc(R,y_train)
+        self.n_class_atoms = ckc.n_class_atoms
+        #import pdb
+        #pdb.set_trace()
+        #testing
+
+
+
+    def predict(self,X_test):
+        '''test the classifier'''
+
+        Z_common = self.sparse_coder(X_test,self.D_common)
+        R = X_test - np.dot(self.D_common,Z_common)
+
+        sparse_coder = sparse_encoder(algorithm='ormp',params={'n_nonzero_coefs':3},
+                                            mmap=self.mmap,n_jobs=1)
+
+        y_pred = src_predict(R,self.D,self.n_class_atoms,sparse_coder,
+                            method=self.method,n_jobs=self.n_jobs)
+
+        return y_pred
 """

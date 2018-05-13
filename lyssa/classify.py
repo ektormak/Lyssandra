@@ -178,7 +178,6 @@ class classifier():
 
             y_pred = self.predict(X_test)
             y_pred = np.array(y_pred)
-            n_correct = np.sum(y_test == y_pred)
             class_acc = class_accuracy(y_pred, y_test)
             # avg_class_acc  = avg_class_accuracy(y_pred,y_test)
             cv_scores.append(class_acc)
@@ -205,11 +204,13 @@ class linear_svm(classifier):
     a wrapper to scikit's Linear SVM.
     """
 
-    def __init__(self, param_grid=[{'C': [1e-10, 1e-4, 1e-3, 1e-2, 5e-2, 1e-1, 1, 10]}], n_folds=None,
+    def __init__(self, param_grid=None, n_folds=None,
                  n_class_samples=None, n_test_samples=None, n_tests=1, name="linear svm classifier"):
         classifier.__init__(self, param_grid=param_grid, n_folds=n_folds,
                             n_class_samples=n_class_samples, n_test_samples=n_test_samples, n_tests=n_tests, name=name)
 
+        if param_grid is None:
+            self.param_grid = [{'C': [1e-10, 1e-4, 1e-3, 1e-2, 5e-2, 1e-1, 1, 10]}]
         self.clf = svm.LinearSVC()
         self.clf.penalty = 'l2'
         self.clf.dual = False

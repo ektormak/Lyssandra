@@ -44,12 +44,12 @@ def ScSPM_SRC():
     X = norm_cols(X)
 
     se = sparse_encoder(algorithm='group_omp',params={'n_groups':1},n_jobs=8)
-    ckc = class_ksvd_coder(atom_ratio=1, sparse_coder=se, non_neg=False,max_iter=5,
-                            n_cycles=1, n_jobs=n_jobs, mmap=False,approx=True,verbose=True)
+    ckc = class_ksvd_coder(atom_ratio=1, sparse_coder=se, non_neg=False,
+                           max_iter=5, n_cycles=1, n_jobs=4,
+                           mmap=False, approx=True, verbose=True)
 
-    sc = src_classifier(class_dict_coder=None,sparse_coder=se,
-                n_class_samples=30,n_test_samples=None,
-                method="global",mmap=False,n_jobs=n_jobs)
+    sc = src_classifier(class_dict_coder=None, sparse_coder=se, n_class_samples=30,
+                        n_test_samples=None, method="global", mmap=False, n_jobs=4)
 
     sc(X, y)
 
@@ -62,8 +62,8 @@ def multiclass_linear_svm_ex():
     y = wm.load("labels.npy")
     X = norm_cols(X)
 
-    lsvm = linear_svm(param_grid=[ {'C': [1e-1,5e-1,1,5,1e1,5e3,1e4]} ],n_class_samples=30,n_test_samples=50)
-    lsvm(X,y)
+    lsvm = linear_svm(param_grid=[{'C': [1e-1, 5e-1, 1, 5, 1e1, 5e3, 1e4]}], n_class_samples=30, n_test_samples=50)
+    lsvm(X, y)
 
 if __name__ == "__main__":
     #lc_ksvd_ex()

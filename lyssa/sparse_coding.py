@@ -369,7 +369,6 @@ def batch_omp(X, Alpha, D, Gram, n_nonzero_coefs=None, tol=None):
     return Z
 
 
-
 def nn_omp(X, D, n_nonzero_coefs=None, tol=None):
     """ The Non Negative OMP algorithm of
         'On the Uniqueness of Nonnegative Sparse Solutions to Underdetermined Systems of Equations'"""

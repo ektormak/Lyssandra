@@ -2,7 +2,7 @@ from __future__ import division
 import numpy as np
 from lyssa.utils import fast_dot
 from functools import partial
-from lyssa.utils import get_mmap, run_parallel
+from lyssa.utils import run_parallel
 
 """
 implementations of feature encoders from the paper
