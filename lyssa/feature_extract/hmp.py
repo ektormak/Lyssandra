@@ -36,7 +36,6 @@ def pool_proc(feature_maps, feature_map_dims, idxs, output_img_path, spp=False, 
         pw = feature_map_dims[1, i]
 
         if spp:
-
             loc_h = np.arange(ph)
             loc_w = np.arange(pw)
             locs = np.array(list(product(loc_h, loc_w)))
@@ -56,8 +55,6 @@ def pool_proc(feature_maps, feature_map_dims, idxs, output_img_path, spp=False, 
                 binidx = np.floor(loc_h / hunit) * lev + np.floor(loc_w / wunit)
                 for k in range(n_cells[c]):
                     idx = np.nonzero(binidx == k)[0]
-                    hidx = loc_h[idx]
-                    widx = loc_w[idx]
                     if len(idx) > 0:
                         pmap = feature_map[:, idx]
                         poolpatches[cnt, :] = spp_pooler(pmap)

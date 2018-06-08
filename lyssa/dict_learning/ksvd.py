@@ -231,7 +231,7 @@ def ksvd_dict_learn(X, n_atoms, init_dict='data', sparse_coder=None,
     return D, Z
 
 
-class ksvd_coder():
+class ksvd_coder(object):
     """
     a wrapper to the ksvd_dict_learn function
     """
@@ -269,6 +269,3 @@ class ksvd_coder():
 
     def encode(self, X):
         return self.sparse_coder(X, self.D)
-
-    def print_params(self):
-        pass

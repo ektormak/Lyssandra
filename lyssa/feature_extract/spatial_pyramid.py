@@ -61,7 +61,6 @@ class sc_spm_extractor():
             centresy = py + float(psize) / 2 - 0.5
             centresx = px + float(psize) / 2 - 0.5
 
-            n_features = desc.shape[0]
             # sparsely encode the patch
             coded_patches = self.sparse_coder.encode(desc, dictionary)
 

@@ -42,7 +42,7 @@ if conf is not None:
             except OSError:
                 continue
         if not openblas_lib:
-            print "Could not locate an OpenBLAS shared library"
+            print "could not locate an OpenBLAS shared library"
     else:
         has_openblas = False
     # set save paths
@@ -63,7 +63,8 @@ for save_path in save_paths:
             n_invalid_paths += 1
 
 if n_invalid_paths == len(save_paths):
-    # every supplied path is invalid, use the default one
-    save_paths = [default_save_path()]
+    save_path = default_save_path()
+    print "using default save path {0}".format(save_path)
+    save_paths = [save_path]
 
 max_workspaces = int(1e3)

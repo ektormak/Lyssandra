@@ -12,10 +12,10 @@ from sklearn.datasets import fetch_lfw_people
 
 def whitened_rgb_atoms():
 
-    #a small dataset of images
+    # a small dataset of images
     imgs = get_images(colored=True)
 
-    #alternatively we could use the lfw dataset
+    # alternatively we could use the lfw dataset
     """
     lfw_people = fetch_lfw_people(min_faces_per_person=70, resize=0.4,color=True)
     faces = lfw_people.data
@@ -37,9 +37,9 @@ def whitened_rgb_atoms():
 
     wn = preproc("whitening")
     from lyssa.feature_extract.preproc import local_contrast_normalization
-    #apply lcn and then whiten the patches
+    # apply lcn and then whiten the patches
     X = wn(local_contrast_normalization(X))
-    #learn the dictionary using Batch Orthognal Matching Pursuit and KSVD
+    # learn the dictionary using Batch Orthognal Matching Pursuit and KSVD
     se = sparse_encoder(algorithm='bomp', params={'n_nonzero_coefs': n_nonzero_coefs}, n_jobs=8)
     kc = ksvd_coder(n_atoms=n_atoms, sparse_coder=se, init_dict="data",
                     max_iter=3, verbose=True, approx=False, n_jobs=8)
@@ -48,11 +48,12 @@ def whitened_rgb_atoms():
     D = kc.D
     for i in range(n_atoms):
         D[:, i] = (D[:, i] - D[:, i].min()) / float((D[:, i].max() - D[:, i].min()))
-    #plot the learned dictionary
+    # plot the learned dictionary
     plt.figure(figsize=(4.2, 4))
     for i in range(n_plot_atoms):
         plt.subplot(10, 10, i + 1)
         plt.imshow(D[:, i].reshape((patch_shape[0], patch_shape[1], 3)))
+        plt.subplots_adjust(left=0.0, bottom=0.0, right=1.0, top=1.0, wspace=0.0, hspace=0.0)
         plt.xticks(())
         plt.yticks(())
     plt.show()
@@ -62,11 +63,10 @@ def dictionary_learn_ex():
 
     patch_shape = (18, 18)
     n_atoms = 225
+    n_plot_atoms = 225
     n_nonzero_coefs = 2
-    n_plot_atoms = 100
     n_jobs = 8
     lfw_people = fetch_lfw_people(min_faces_per_person=70, resize=0.4,color=False)
-    #faces = lfw_people.data
     n_imgs, h, w = lfw_people.images.shape
 
     imgs = []
@@ -81,20 +81,20 @@ def dictionary_learn_ex():
 
     se = sparse_encoder(algorithm='bomp',params={'n_nonzero_coefs': n_nonzero_coefs}, n_jobs=n_jobs)
 
-    odc = online_dictionary_coder(n_atoms=n_atoms, sparse_coder=se, n_epochs=1,
+    odc = online_dictionary_coder(n_atoms=n_atoms, sparse_coder=se, n_epochs=2,
                                   batch_size=1000, non_neg=False, verbose=True, n_jobs=n_jobs)
     odc.fit(X)
     D = odc.D
-    n_atoms_plot = 225
     plt.figure(figsize=(4.2, 4))
-    for i in range(n_atoms_plot):
+    for i in range(n_plot_atoms):
         plt.subplot(15, 15, i + 1)
         plt.imshow(D[:, i].reshape(patch_shape), cmap=plt.cm.gray)
+        plt.subplots_adjust(left=0.0, bottom=0.0, right=1.0, top=1.0, wspace=0.0, hspace=0.0)
         plt.xticks(())
         plt.yticks(())
     plt.show()
 
 
 if __name__ == '__main__':
-    whitened_rgb_atoms()
-    #dictionary_learn_ex()
+    #whitened_rgb_atoms()
+    dictionary_learn_ex()

@@ -20,13 +20,13 @@ def lc_ksvd_ex():
 
     wm = get_workspace(id=id)
     wm.show_metadata()
-    X = wm.load("features.npy",online=False)
+    X = wm.load("features.npy", online=False)
     y = wm.load("labels.npy")
     X = norm_cols(X)
 
     se = sparse_encoder(algorithm='bomp', params={"n_nonzero_coefs": 30}, n_jobs=8)
     ckc = class_ksvd_coder(atom_ratio=1, sparse_coder=se,non_neg=False, max_iter=5,
-                            n_cycles=1, n_jobs=8, mmap=False, approx=True, verbose=True)
+                           n_cycles=1, n_jobs=8, mmap=False, approx=True, verbose=True)
 
     lc = lc_ksvd_classifier(class_dict_coder=ckc, sparse_coder=se,
                             approx=True, max_iter=4, n_class_samples=30,n_test_samples=None,

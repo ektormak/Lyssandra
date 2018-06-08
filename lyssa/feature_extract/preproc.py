@@ -46,10 +46,7 @@ class ZCA():
 
 
 def local_contrast_normalization(X):
-    """
-    apply local constrast normalization to the
-    datapoints in X
-    """
+    """apply local constrast normalization to the datapoints in X"""
     X = X.T
     X = X.reshape((X.shape[0], -1))
     X -= X.mean(axis=1)[:, None]

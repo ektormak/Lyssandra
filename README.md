@@ -1,5 +1,5 @@
 # Lyssandra #
-A collection of Python tools for feature extraction and image classification using Sparse Coding algorithms.
+A collection of Python tools for feature extraction and image classification with Sparse Coding algorithms.
 
 ## features ##
 
@@ -38,7 +38,7 @@ First edit config.yml to specify the
 
 and then do:
 
-    pip setup.py install
+    pip install .
 
 For best performance, configuring numpy with OpenBlas is recommended (see the `Dockerfile`).
 

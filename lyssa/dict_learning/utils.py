@@ -26,9 +26,9 @@ def approx_error_proc(X, Z, D):
 
 """
 def select_datapoints(X):
-	n_samples = X.shape[1]
-	idxs = [i for i in xrange(n_samples) if np.sum(X[:,i]**2) > 1e-6]
-	return idxs
+    n_samples = X.shape[1]
+    idxs = [i for i in xrange(n_samples) if np.sum(X[:,i]**2) > 1e-6]
+    return idxs
 """
 
 
@@ -220,56 +220,56 @@ def replace_coherent_atoms(X, y, D, n_class_atoms, thresh=None, kappa=None, unus
 """
 def find_shared_atoms(X,D,y,sparse_coder=None,n_class_atoms=None,threshold=None):
 
-	#encode the datapoint over the joint dictionary
-	Z = sparse_coder(X,D)
+    #encode the datapoint over the joint dictionary
+    Z = sparse_coder(X,D)
 
-	print "measuring atom quality"
-	#idea1: find the fraction of the datapoints that use each atom
-	# and are in the same class with the total number of datapoints that
-	# use this atom
-	#idea2: for each atom contruct a weighted average using the datapoints
-	# that belong to a class different than it. The weights are equal
-	# to the absolute value of the coefficients these datapoints have
-	# for this atom
-	n_classes = len(n_class_atoms)
-	atom_scores = np.zeros(np.sum(n_class_atoms))
-	for c in range(n_classes):
+    print "measuring atom quality"
+    #idea1: find the fraction of the datapoints that use each atom
+    # and are in the same class with the total number of datapoints that
+    # use this atom
+    #idea2: for each atom contruct a weighted average using the datapoints
+    # that belong to a class different than it. The weights are equal
+    # to the absolute value of the coefficients these datapoints have
+    # for this atom
+    n_classes = len(n_class_atoms)
+    atom_scores = np.zeros(np.sum(n_class_atoms))
+    for c in range(n_classes):
 
-		class_idx = np.where(y==c)[0]
-		atoms_idx = get_class_atoms(c,n_class_atoms)
-		#for each atom in this class
-		for atom_idx in atoms_idx:
+        class_idx = np.where(y==c)[0]
+        atoms_idx = get_class_atoms(c,n_class_atoms)
+        #for each atom in this class
+        for atom_idx in atoms_idx:
 
-			#sometimes we get Index errors
-			#
-			if atom_idx == Z.shape[0]:
-				break
-			#print start_idx
-			#find the indices of the datapoints that
-			#use this atom
-			data_idx = Z[atom_idx,:].nonzero()[0]
-			if len(data_idx) == 0:
-				#this atom is not used
-				continue
-			#find the number of datapoints that use this
-			#atom and are in the same class
-			n_correct = len(set(data_idx).intersection(class_idx))
-			n_total = len(data_idx)
-			#print atom_idx
-			#idea1:
-			atom_score = n_correct / float(n_total)
-			atom_scores[atom_idx] = atom_score
-			#idea2:
-			#find all the datapoints that use this atom but belong to
-			#a different class
-			#diff_idx = set(data_idx).difference(set(class_idx))
+            #sometimes we get Index errors
+            #
+            if atom_idx == Z.shape[0]:
+                break
+            #print start_idx
+            #find the indices of the datapoints that
+            #use this atom
+            data_idx = Z[atom_idx,:].nonzero()[0]
+            if len(data_idx) == 0:
+                #this atom is not used
+                continue
+            #find the number of datapoints that use this
+            #atom and are in the same class
+            n_correct = len(set(data_idx).intersection(class_idx))
+            n_total = len(data_idx)
+            #print atom_idx
+            #idea1:
+            atom_score = n_correct / float(n_total)
+            atom_scores[atom_idx] = atom_score
+            #idea2:
+            #find all the datapoints that use this atom but belong to
+            #a different class
+            #diff_idx = set(data_idx).difference(set(class_idx))
 
-			#find the coeffs in absolute value
-			#np.abs(Z[atom_idx,diff_idx])
-	#return the sorted indices of the atoms
-	#descending order
-	#atom_scores = np.fliplr([np.argsort(atom_scores)])[0]
-	#ascending order
-	atom_scores = np.argsort(atom_scores)
-	return atom_scores
+            #find the coeffs in absolute value
+            #np.abs(Z[atom_idx,diff_idx])
+    #return the sorted indices of the atoms
+    #descending order
+    #atom_scores = np.fliplr([np.argsort(atom_scores)])[0]
+    #ascending order
+    atom_scores = np.argsort(atom_scores)
+    return atom_scores
 """
