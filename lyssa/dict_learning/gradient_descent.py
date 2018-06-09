@@ -37,7 +37,10 @@ def projected_grad_desc(X, n_atoms=None, sparse_coder=None, batch_size=None, D_i
     slower execution but low memory overhead
     """
 
-    # dont monitor sparse coding
+    if eta is None:
+        raise ValueError('Must specify learning rate.')
+
+    # don't monitor sparse coding
     sparse_coder.verbose = False
     n_features, n_samples = X.shape
     # initialize the dictionary
@@ -63,11 +66,9 @@ def projected_grad_desc(X, n_atoms=None, sparse_coder=None, batch_size=None, D_i
         set_openblas_threads(n_jobs)
 
     max_patience = 10
-    error_curr = 0
     error_prev = 0
     patience = 0
     approx_errors = []
-    incs = []
     for e in range(n_epochs):
         # cycle over the batches
         for i, batch in zip(range(n_iter), cycle(batch_idx)):
@@ -89,7 +90,7 @@ def projected_grad_desc(X, n_atoms=None, sparse_coder=None, batch_size=None, D_i
                 grad_incoh = 0
 
             grad = grad_approx
-            D = D - eta * grad
+            D = D - (eta * grad) + grad_incoh
             # enforce non-negativity
             if non_neg:
                 D[D < 0] = 0
@@ -97,9 +98,7 @@ def projected_grad_desc(X, n_atoms=None, sparse_coder=None, batch_size=None, D_i
             D = norm_cols(D)
             # sparse coding
             Z = sparse_coder(X, D)
-            from lyssa.dict_learning.utils import average_mutual_coherence
-            approx_errors.append(approx_error(D, Z, X, n_jobs=n_jobs))
-        # replace_unused_atoms(A,unused_data,i)
+        #replace_unused_atoms(A,unused_data,i)
 
         if e < n_epochs - 1:
             print ""

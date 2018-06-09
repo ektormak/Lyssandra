@@ -711,6 +711,8 @@ class sparse_encoder(object):
             func = partial(llc, knn=self.params.get('knn'))
             data = X
             args = [D]
+        else:
+            raise ValueError("Sparse optimizer not found.")
 
         if self.verbose:
             msg = "sparse coding"

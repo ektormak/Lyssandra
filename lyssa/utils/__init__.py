@@ -1,8 +1,8 @@
 from .math import fast_dot, outer, norm, norm_cols
 import numpy as np
-import sys, os
-import pickle
-import warnings
+import sys
+import os
+
 from PIL import Image
 from .config import openblas_lib
 from .dataset import split_dataset, get_mmap, get_empty_mmap, img_dataset
@@ -196,6 +196,8 @@ def gen_batches(N, batch_size=None):
 
         if N > base:
             batches_idx.append(range(base, N))
+    else:
+        batches_idx = [range(0, N)]
     return batches_idx
 
 
@@ -233,7 +235,7 @@ def boat():
     return get_image('boat.png')
 
 
-def get_images(exclude=None,colored=False):
+def get_images(exclude=None, colored=False):
 
     if colored:
         files = ['alley.png', 'building.png', 'man_color.png', 'flowers.png', 'girl.png']
