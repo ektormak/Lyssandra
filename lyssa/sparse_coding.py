@@ -40,9 +40,7 @@ def _omp(x, D, Gram, alpha, n_nonzero_coefs=None, tol=None):
         if k in Dx:
             break
         Dx = np.append(Dx, k)
-        # solve the Least Squares problem
-        # to find the coefs z
-        DI = D[:, Dx]
+        # solve the Least Squares problem to find the coefs z
         G = Gram[Dx, :][:, Dx]
         G = np.atleast_2d(G)
         try:
@@ -238,7 +236,7 @@ def _sparse_group_omp(x, D, Gram, alpha, groups=None, n_groups=None, n_nonzero_c
 
 
 def somp(X, D, Gram, data_groups=None, n_nonzero_coefs=None):
-    # the Simultaneous OMP algorirthm
+    # the Simultaneous OMP algorithm
     n_samples = X.shape[1]
     n_atoms = D.shape[1]
     n_groups = len(data_groups)
@@ -440,8 +438,7 @@ def iterative_hard_thresh(X, Z0, R0, D, eta=None, n_nonzero_coefs=None, n_iter=N
 
         Z -= eta * np.dot(D.T, R)
         for i in xrange(n_samples):
-            # zero out all the entries
-            # that have small values
+            # zero out all the entries that have small values
             idx = np.abs(Z[:, i]).argsort()[::-1][n_nonzero_coefs:]
             Z[idx, i] = 0
         R = np.dot(D, Z) - X
@@ -621,7 +618,6 @@ class sparse_encoder(object):
         batched_args = None
 
         if self.algorithm == 'omp':
-
             Gram = fast_dot(D.T, D)
             args = [D, Gram]
             Alpha = fast_dot(D.T, X)
@@ -630,7 +626,6 @@ class sparse_encoder(object):
             func = partial(omp, n_nonzero_coefs=self.params.get('n_nonzero_coefs'), tol=self.params.get('tol'))
 
         elif self.algorithm == 'bomp':
-
             Gram = fast_dot(D.T, D)
             Alpha = fast_dot(D.T, X)
             batched_args = [Alpha]
@@ -646,13 +641,11 @@ class sparse_encoder(object):
                            nonzero_percentage=self.params.get('nonzero_percentage'))
 
         elif self.algorithm == "nnomp":
-
             args = [D]
             data = X
             func = partial(nn_omp, n_nonzero_coefs=self.params.get('n_nonzero_coefs'), tol=self.params.get('tol'))
 
         elif self.algorithm == 'group_omp':
-
             Gram = fast_dot(D.T, D)
             Alpha = fast_dot(D.T, X)
             batched_args = [Alpha]
@@ -661,7 +654,6 @@ class sparse_encoder(object):
             args = [D, Gram]
 
         elif self.algorithm == 'sparse_group_omp':
-
             # group_omp(X,D,Gram,groups=None,n_groups=None)
             Gram = fast_dot(D.T, D)
             data = X
@@ -678,7 +670,6 @@ class sparse_encoder(object):
             args = [D, Gram]
 
         elif self.algorithm == 'iht':
-
             Alpha = fast_dot(D.T, X)
             data = Alpha
             args = []
@@ -707,7 +698,6 @@ class sparse_encoder(object):
             return lasso(self.params.get('lambda'), self.n_jobs)(X, D)
 
         elif self.algorithm == 'llc':
-
             func = partial(llc, knn=self.params.get('knn'))
             data = X
             args = [D]

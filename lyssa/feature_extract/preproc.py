@@ -1,5 +1,5 @@
 from __future__ import division
-from sklearn.utils import as_float_array
+
 import numpy as np
 from scipy.linalg import eigh
 from lyssa.utils.math import normalize, norm_cols
@@ -15,34 +15,19 @@ class l2_normalizer():
             return normalize(Z.flatten()).reshape(shape)
 
 
-class ZCA():
+def zca_transform(X, bias=.1):
     # each datapoint is a row of X
-
-    def __init__(self, n_components=None, bias=.1, copy=False):
-        self.n_components = n_components
-        self.bias = bias
-        self.copy = copy
-
-    def fit(self, X, y=None):
-        # X = array2d(X)
-        n_samples, n_features = X.shape
-        X = as_float_array(X, copy=self.copy)
-        # substracts the mean for each feature vector
-        self.mean_ = np.mean(X, axis=0)
-        X -= self.mean_
-        eigs, eigv = eigh(np.dot(X.T, X) / n_samples + \
-                          self.bias * np.identity(n_features))
-        components = np.dot(eigv * np.sqrt(1.0 / eigs), eigv.T)
-        self.components_ = components
-        # Order the explained variance from greatest to least
-        self.explained_variance_ = eigs[::-1]
-        return self
-
-    def transform(self, X):
-        if self.mean_ is not None:
-            X -= self.mean_
-        X_transformed = np.dot(X, self.components_)
-        return X_transformed
+    n_samples, n_features = X.shape
+    # subtracts the mean for each feature vector
+    mean_ = np.mean(X, axis=0)
+    X -= mean_
+    eigs, eigv = eigh(np.dot(X.T, X) / n_samples + \
+                      bias * np.identity(n_features))
+    components = np.dot(eigv * np.sqrt(1.0 / eigs), eigv.T)
+    components_ = components
+    # Order the explained variance from greatest to least
+    X_transformed = np.dot(X, components_)
+    return X_transformed
 
 
 def local_contrast_normalization(X):
@@ -90,6 +75,6 @@ class preproc():
             # to lie in[0,1]
             X = X / 255.
         elif self.name == 'whitening':
-            X = ZCA().fit(X.T).transform(X.T).T
+            X = zca_transform(X.T).T
 
         return X

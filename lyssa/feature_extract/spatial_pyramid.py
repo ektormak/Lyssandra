@@ -47,7 +47,8 @@ class sc_spm_extractor():
         psize = self.feature_extractor.patch_size
         n_imgs = len(imgs)
         n_atoms = dictionary.shape[1]
-        n_features = np.sum(np.array(self.levels) ** 2) * n_atoms
+        cells = np.array(self.levels) ** 2
+        n_features = np.sum(cells) * n_atoms
         Z = np.zeros((n_features, n_imgs))
 
         for k in range(n_imgs):
@@ -58,15 +59,14 @@ class sc_spm_extractor():
             # cx,cy  -//- of the center pixels of each patch
             py = pos[:, 0]
             px = pos[:, 1]
-            centresy = py + float(psize) / 2 - 0.5
-            centresx = px + float(psize) / 2 - 0.5
+            cy = py + float(psize) / 2 - 0.5
+            cx = px + float(psize) / 2 - 0.5
 
             # sparsely encode the patch
             coded_patches = self.sparse_coder.encode(desc, dictionary)
 
             n_atoms = coded_patches.shape[0]
-            n_cells = np.array(self.levels) ** 2
-            n_total_cells = np.sum(n_cells)
+            n_total_cells = np.sum(cells)
             imsize = img.shape
 
             # pre-allocate
@@ -80,8 +80,8 @@ class sc_spm_extractor():
                 wunit = float(imsize[1]) / lev
                 hunit = float(imsize[0]) / lev
                 # Find patch-cell memberships
-                binidx = np.floor(centresy / hunit) * lev + np.floor(centresx / wunit)
-                for j in range(n_cells[i]):
+                binidx = np.floor(cy / hunit) * lev + np.floor(cx / wunit)
+                for j in range(cells[i]):
                     # get the patch indices of the patches
                     # in the j-th cell of the i-th layer
                     pidx = np.nonzero(binidx == j)[0]
@@ -131,14 +131,12 @@ class spatial_pyramid():
         return Z
 
     def dict_learn(self, imgs, feature_extractor=None, dict_learner=None):
-
         if not self.workspace.contains("descriptors.npy"):
             self.descriptors = feature_extractor(imgs)
             self.workspace.save("descriptors.npy", self.descriptors)
         else:
             self.descriptors = self.workspace.load("descriptors.npy")
 
-        # memmap the features/descriptors
         if self.mmap:
             self.descriptors = get_mmap(self.descriptors)
 

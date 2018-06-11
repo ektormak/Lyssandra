@@ -7,15 +7,13 @@ from sklearn.cross_validation import StratifiedKFold
 
 
 def class_accuracy(y_pred, y_test):
-    # the classification accuracy
+    """the classification accuracy"""
     n_correct = np.sum(y_test == y_pred)
     return n_correct / float(y_test.size)
 
 
 def avg_class_accuracy(y_pred, y_test):
-    """
-    the classification accuracy averaged over the classes
-    """
+    """the classification accuracy averaged over the classes"""
     n_classes = len(set(y_test))
     class_accs = []
 
@@ -23,7 +21,6 @@ def avg_class_accuracy(y_pred, y_test):
         n_correct = np.sum(y_test[y_test == c] == y_pred[y_test == c])
         n_class_samples = y_test[y_test == c].size
         class_accs.append(n_correct / float(n_class_samples))
-
     return np.mean(class_accs)
 
 
@@ -190,19 +187,17 @@ class classifier():
 
     @abc.abstractmethod
     def train(self, X_train, y_train, param_set=None):
-        '''train the classifier'''
+        """train the classifier"""
         raise NotImplementedError
 
     @abc.abstractmethod
     def predict(self, X_test):
-        '''test the classifier'''
+        """predict labels in X_test"""
         raise NotImplementedError
 
 
 class linear_svm(classifier):
-    """
-    a wrapper to scikit's Linear SVM.
-    """
+    """a wrapper to scikit's Linear SVM."""
 
     def __init__(self, param_grid=None, n_folds=None,
                  n_class_samples=None, n_test_samples=None, n_tests=1, name="linear svm classifier"):
@@ -217,11 +212,9 @@ class linear_svm(classifier):
         self.clf.multi_class = 'ovr'
 
     def train(self, X_train, y_train, param_set=None):
-        '''train the classifier'''
         self.clf.set_params(**param_set)
         self.clf.fit(X_train.T, y_train)
 
     def predict(self, X_test):
-        '''test the classifier'''
         y_pred = self.clf.predict(X_test.T)
         return y_pred
