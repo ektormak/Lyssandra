@@ -125,7 +125,6 @@ def local_error_predict(X, D, sparse_coder, n_class_atoms):
     """
 
     n_samples = X.shape[1]
-    n_classes = len(n_class_atoms)
     E = local_error(X, D, n_class_atoms, sparse_coder)
 
     predictions = []
@@ -139,8 +138,7 @@ def local_sparse_predict(X, D, sparse_coder, n_class_atoms):
     n_samples = X.shape[1]
     n_classes = len(n_class_atoms)
     n_total_atoms = np.sum(n_class_atoms)
-    # sparsely encode each datapoint over
-    # each class specific dictionary
+    # sparsely encode each datapoint over each class specific dictionary
     Z = np.zeros((n_total_atoms, n_samples))
     for c in range(n_classes):
         c_idx = get_class_atoms(c, n_class_atoms)
@@ -199,31 +197,26 @@ def src_predict(X, D, n_class_atoms, sparse_coder, method="global", n_jobs=1):
     lowerst approximation error
     """
 
-    n_classes = len(n_class_atoms)
     solve_sparse = solve_error = False
     if 'n_nonzero_coefs' or 'n_groups' in sparse_coder.params.keys():
         solve_sparse = True
     elif 'tol' in sparse_coder.params.keys():
         solve_error = True
 
-    n_samples = X.shape[1]
     if 'n_groups' in sparse_coder.params.keys():
         sparse_coder.params["groups"] = [range(c * cl_atoms, (c + 1) * cl_atoms) for c, cl_atoms in
                                          enumerate(n_class_atoms)]
 
-    # calculate the approximation error
     predictions = None
     if solve_sparse and method == "global":
         predictions = global_error_predict(X, D, sparse_coder, n_class_atoms, n_jobs=n_jobs)
     elif solve_error and method == "global":
-        # func = global_sparse_predict
-        pass
-    if solve_sparse and method == "local":
-        # func = local_error_predict
-        pass
+        predictions = global_sparse_predict(X, D, sparse_coder, n_class_atoms)
+    elif solve_sparse and method == "local":
+        predictions = local_error_predict(X, D, sparse_coder, n_class_atoms)
     elif solve_error and method == "local":
-        # func = local_sparse_predict
-        pass
+        predictions = local_sparse_predict(X, D, sparse_coder, n_class_atoms)
+
     return predictions
 
 
@@ -246,7 +239,6 @@ class src_classifier(classifier):
         self.n_jobs = n_jobs
 
     def train(self, X_train, y_train, param_set=None):
-        '''train the classifier'''
 
         n_classes = len(set(y_train))
 
@@ -265,7 +257,6 @@ class src_classifier(classifier):
             for c in range(n_classes):
                 x_c = y_train == c
                 Xc = X_train[:, x_c]
-                n_class_samples = Xc.shape[1]
 
                 Dc = init_dictionary(Xc, self.n_class_atoms[c], method='data', normalize=True)
                 base = c * self.n_class_atoms[c]
@@ -275,7 +266,6 @@ class src_classifier(classifier):
             self.D = D
 
     def predict(self, X_test):
-        '''test the classifier'''
         self.sparse_coder.mmap = self.mmap
         self.sparse_coder.n_jobs = self.n_jobs
         y_pred = src_predict(X_test, self.D, self.n_class_atoms, self.sparse_coder,
@@ -311,7 +301,6 @@ class src_feature_classifier(classifier):
         self.Z_test = None
 
     def train(self, X_train, y_train, param_set=None):
-        '''train the classifier'''
 
         n_classes = len(set(y_train))
 
@@ -331,7 +320,6 @@ class src_feature_classifier(classifier):
                 for c in range(n_classes):
                     x_c = y_train == c
                     Xc = X_train[:, x_c]
-                    n_class_samples = Xc.shape[1]
 
                     Dc = init_dictionary(Xc, self.n_class_atoms[c], method='data', normalize=True)
                     base = c * self.n_class_atoms[c]
@@ -353,7 +341,6 @@ class src_feature_classifier(classifier):
         self.lsvm.train(self.Z_train, y_train, param_set=param_set)
 
     def predict(self, X_test):
-        '''test the classifier'''
         # if not self.features_extracted:
         if self.method == "global":
             self.Z_test = global_src_features(X_test, self.D, self.sparse_coder, self.n_class_atoms, n_jobs=self.n_jobs)
