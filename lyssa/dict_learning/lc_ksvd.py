@@ -2,8 +2,8 @@ from lyssa.classify import classifier
 import numpy as np
 from numpy.linalg import inv
 from .ksvd import ksvd
-from .utils import init_dictionary
-from lyssa.utils import set_openblas_threads
+from .utils import init_dictionary, approx_error
+from lyssa.utils import set_openblas_threads, get_mmap
 import time
 
 """
@@ -36,7 +36,7 @@ class lc_ksvd_classifier(classifier):
         self.sparse_coder = sparse_coder
         self.max_iter = max_iter
         self.approx = approx
-        # the parameters of the lc_ksvd algorithm
+        # the parameters of the LC-KSVD algorithm
         self.alpha = alpha
         self.beta = beta
         self.mmap = mmap
@@ -62,7 +62,6 @@ class lc_ksvd_classifier(classifier):
             for c in range(n_classes):
                 x_c = y_train == c
                 Xc = X_train[:, x_c]
-                n_class_samples = Xc.shape[1]
 
                 Dc = init_dictionary(Xc, self.n_class_atoms[c], method='data', normalize=True)
                 base = c * self.n_class_atoms[c]
@@ -83,7 +82,7 @@ class lc_ksvd_classifier(classifier):
             start += self.n_class_atoms[c]
 
         self.D, Z, self.W = lc_ksvd(X_train, y_train, D, Q, sparse_coder=self.sparse_coder,
-                                    alpha=self.alpha, beta=self.beta, lambda1=1, lambda2=1, init_dict='data',
+                                    alpha=self.alpha, beta=self.beta, lambda1=1, lambda2=1,
                                     max_iter=self.max_iter, approx=self.approx, n_jobs=self.n_jobs)
 
     def predict(self, X_test):
@@ -103,7 +102,7 @@ def lc_ksvd_predict(X, D, W, sparse_coder):
     return predictions
 
 
-def lc_ksvd(X, y, D, Q, alpha=1, beta=1, lambda1=1, lambda2=1, init_dict='data',
+def lc_ksvd(X, y, D, Q, alpha=1, beta=1, lambda1=1, lambda2=1,
             sparse_coder=None, max_iter=2, approx=False, mmap=False, verbose=False, n_jobs=1):
     """
     X: the data matrix with shape (n_features,n_samples)

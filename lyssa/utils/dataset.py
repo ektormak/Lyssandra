@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import sys
+import gc
 import PIL
 import os.path
 import shutil
@@ -11,9 +12,7 @@ from scipy import sparse
 
 
 def save_sparse_matrix(filename, X):
-    """
-    save the sparse matrix X as
-    filename + ".npz"
+    """save the sparse matrix X as filename + ".npz"
     """
     X_coo = X.tocoo()
     row = X_coo.row
@@ -23,7 +22,7 @@ def save_sparse_matrix(filename, X):
     np.savez(filename, row=row, col=col, data=data, shape=shape)
 
 
-def load_sparse_matrix(filename,shape=None):
+def load_sparse_matrix(filename, shape=None):
     # filename should end in .npz
     X = np.load(filename)
     X = sparse.coo_matrix((X['data'], (X['row'], X['col'])), shape=X['shape'])
@@ -46,7 +45,7 @@ def save(data, path=None, prefix=None, suffix=".npy"):
     if type(data) is np.ndarray or type(data) is np.core.memmap:
 
         if suffix == ".npy":
-            np.save(os.path.join(path,prefix+suffix), data)
+            np.save(os.path.join(path, prefix+suffix), data)
         elif suffix == ".npz":
             # compress and save
             pass
@@ -65,7 +64,7 @@ def save(data, path=None, prefix=None, suffix=".npy"):
             pickle.dump(data, handle)
 
 
-def load(path, online=False,sparse=False):
+def load(path, online=False, sparse=False):
     """
     load the data in <path>,
     assumes that the data files in that path are of the same type
@@ -93,7 +92,7 @@ def load(path, online=False,sparse=False):
             return data
 
 
-def to_data_matrix(path,mmap=False):
+def to_data_matrix(path, mmap=False):
     """
     converts a list of numpy array vectors into a data matrix
     assumes that the vectors have the same length
@@ -130,7 +129,6 @@ def get_mmap(X):
     _X = np.memmap(filename, dtype='float64', mode='w+', shape=X.shape)
     _X[:] = X[:]
     del X
-    import gc
     gc.collect()
     return _X
 
@@ -176,8 +174,8 @@ class online_reader():
     def __len__(self):
         return len(self.data_files)
 
-    def __getitem__(self,index):
-        if isinstance(index,list):
+    def __getitem__(self, index):
+        if isinstance(index, list):
             return self.__getslice__(index[0],index[-1]+1)
         if self.sparse == "2D":
             return load_sparse_matrix(self.data_files[index])
@@ -187,10 +185,10 @@ class online_reader():
         else:
             return np.load(self.data_files[index])
 
-    def __add__(self,other):
+    def __add__(self, other):
         return online_reader(data_files=self.data_files + other.data_files,sort=False,sparse=self.sparse,suffix=self.suffix)
 
-    def __getslice__(self,start,end):
+    def __getslice__(self, start, end):
         # return an online reader
         if end-start == 1:
             # if only one image is requested
@@ -223,7 +221,7 @@ class online_writer():
         formated_index = str(base)+str(index)
         return np.load(os.path.join(self.path,self.prefix+formated_index+".npy"))
 
-    def __setitem__(self,index,data):
+    def __setitem__(self, index, data):
         base = (len(str(self.n_files))-len(str(index)))*'0'
         formated_index = str(base)+str(index)
         if self.sparse:
@@ -231,11 +229,11 @@ class online_writer():
         else:
             np.save(os.path.join(self.path, self.prefix+formated_index+".npy"),data)
 
-    def append(self,data):
+    def append(self, data):
         self.__setitem__(self.index,data)
         self.index += 1
 
-    def __getslice__(self,start,end):
+    def __getslice__(self, start, end):
         # return an online reader
         return online_reader(data_files=self.data_files[start:end], suffix=self.suffix, sparse=self.sparse)
 
@@ -248,12 +246,10 @@ def split_dataset(n_training_samples, n_test_samples, y):
     """
 
     n_classes = len(set(y))
-    n_samples = y.size
     idx = [np.array([]).astype(int),np.array([]).astype(int)]
     offset = 0
 
     for c in range(n_classes):
-
         yc = y[y == c]
         n_class_samples = yc.size
         trainset_idx = np.random.choice(n_class_samples, size=n_training_samples[c],replace=False)
@@ -266,13 +262,13 @@ def split_dataset(n_training_samples, n_test_samples, y):
         idx[0] = np.concatenate((idx[0], (offset + trainset_idx)))
         idx[1] = np.concatenate((idx[1], (offset + testset_idx)))
         offset += n_class_samples
-
     return idx
 
 
 def explore_dataset(X, img_shape, n_images=5):
-    # show some images randomly selected from the dataset
-    # assumes datapoints are in columns
+    """show sample images randomly selected from the dataset
+       assumes datapoints are in columns"""
+    import matplotlib.pyplot as plt
     n_samples = X.shape[1]
     idx = np.random.choice(n_samples, n_images, replace=False)
     for i in range(n_images):
@@ -305,7 +301,7 @@ class online_img_reader():
     """
     similar to online_reader class but for image arrays
     """
-    def __init__(self,img_files,maxdim,color):
+    def __init__(self, img_files, maxdim, color):
         self.img_files = img_files
         self.maxdim = maxdim
         self.color = color
@@ -313,7 +309,7 @@ class online_img_reader():
     def __len__(self):
         return len(self.img_files)
 
-    def __getitem__(self,index):
+    def __getitem__(self, index):
         if isinstance(index,list):
             return self.__getslice__(index[0],index[-1]+1)
         img_path = self.img_files[index]
@@ -337,7 +333,7 @@ class online_img_reader():
                 img_arr = new_img_arr
         return img_arr
 
-    def __getslice__(self,start,end):
+    def __getslice__(self, start, end):
         if end-start == 1:
             # if only one image is requested
             return self.__getitem__(0)
@@ -416,7 +412,7 @@ class AR_RandomFace():
         Random Face features for each person, we randomly select 20 images for training and the other 6 for testing.
     """
 
-    def __init__(self,mmap=True,name="AR RandomFace"):
+    def __init__(self, mmap=True, name="AR RandomFace"):
         self.name = name
         self.mmap = mmap
 
