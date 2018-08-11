@@ -74,7 +74,7 @@ class feature_encoder(object):
                            n_nonzero_coefs=self.params.get('n_nonzero_coefs'))
 
         if self.n_jobs > 1:
-            # disable openblas to
+            # disable OpenBLAS to
             # avoid hanging problem
             set_openblas_threads(1)
 

@@ -502,7 +502,8 @@ class lasso():
             'lambda1': self._lambda,
             'lambda2': 0,
             'numThreads': self.n_jobs,
-            'mode': 2}
+            'mode': 2
+        }
 
         return np.array(spams.lasso(np.asfortranarray(X, np.float64), D=np.asfortranarray(D, np.float64),
                                     return_reg_path=False, **lasso_params).todense())
@@ -516,7 +517,7 @@ class sparse_encoder(object):
 
     algorithm can be one of the following:
 
-    'omp' => Orthognal Matching Pursuit with Least Sqaures
+    'omp' => Orthogonal Matching Pursuit with Least Sqaures
 
              params:
                     n_nonzero_coefs: the number of non-zero coefficients
@@ -526,7 +527,7 @@ class sparse_encoder(object):
                          in the approximation
 
 
-    'bomp' => Batch Orthognal Matching Pursuit algorithm
+    'bomp' => Batch Orthogonal Matching Pursuit algorithm
 
              params:
                     n_nonzero_coefs: the number of non-zero coefficients
@@ -570,7 +571,7 @@ class sparse_encoder(object):
                      n_nonzero_coefs: the number of non-zero coefficients
                                       of the sparse representations (i.e sparsity)
 
-    'group_omp' => sparsity constraint Group Orthognal Matching Pursuit as described in
+    'group_omp' => sparsity constraint Group Orthogonal Matching Pursuit as described in
                      "Aurelie C. Lozano, Grzegorz Swirszcz, Naoki Abe:  Group Orthogonal Matching Pursuit for
                    Variable Selection and Prediction"
 
@@ -710,7 +711,7 @@ class sparse_encoder(object):
             msg = None
 
         if self.n_jobs > 1:
-            # disable openblas to
+            # disable OpenBLAS to
             # avoid the hanging problem
             set_openblas_threads(1)
 
