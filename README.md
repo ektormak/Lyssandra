@@ -11,7 +11,7 @@ Each signal can be expressed as a sparse linear combination of the atoms in the 
 
 ![alt text](sparse_coding_eq.png)
 
-To encode a set of datapoints `X` over a dictionary `D` we do
+To encode a set of datapoints `X` over a dictionary `D`:
 
 ```python
 from lyssa.sparse_coding import sparse_encoder
@@ -22,6 +22,7 @@ Z = se.encode(X, D)
 ```
 
 Some of the supported solvers include:
+
    - Orthogonal Matching Pursuit (OMP)
    - Batch OMP [1]
    - Group OMP [2]
@@ -73,7 +74,7 @@ and then do:
 
     pip install .
 
-For best performance, configuring numpy with OpenBlas is recommended (see the `Dockerfile`).
+For best performance, configuring numpy with [OpenBLAS](https://www.openblas.net/) is recommended (see `Dockerfile`).
 
 ## Usage ##
 Have a look at the `lyssa/examples` folder for some usage examples, and typical workflows.
