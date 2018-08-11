@@ -3,23 +3,56 @@ A collection of Python tools for feature extraction and image classification wit
 
 ## features ##
 
-1. Sparse Coding algorithms
+### Sparse Coding algorithms
+
+
+Sparse coding is a class of unsupervised methods for learning sets of over-complete dictionaries to represent data efficiently.
+Each signal can be expressed as a sparse linear combination of the atoms in the dictionary:
+
+![alt text](sparse_coding_eq.png)
+
+To encode a set of datapoints `X` over a dictionary `D` we do
+
+```python
+from lyssa.sparse_coding import sparse_encoder
+
+# ...
+se = sparse_encoder(algorithm='bomp', params={'n_nonzero_coefs': 5}, n_jobs=8)
+Z = se.encode(X, D)
+```
+
+Some of the supported solvers include:
    - Orthogonal Matching Pursuit (OMP)
    - Batch OMP [1]
    - Group OMP [2]
    - Non-Negative OMP [3]
    - Iterative Hard Thresholding
-2. Dictionary Learning algorithms
+
+### Dictionary Learning algorithms
+
+Learning the dictionary from the data involves solving the following objective
+
+![alt text](dict_learning_eq.png)
+
+A dictionary learned from image patched of natural images looks like
+
+![alt text](atoms1.png)
+
+Supported solvers:
    - K-SVD and its approximate variant [4]
    - Online Dictionary Learning [5]
    - Projected Gradient Descent
-3. Feature Extraction
+
+### Feature Extraction
    - Spatial Pyramid Matching using Sparse Coding [6]
    - Convolutional Feature Encoders [8]
    - Dense SIFT extraction
-4. Classification
+
+### Classification
    - Label Consistent K-SVD [9]
    - Sparse Representation based Classification [10]
+
+
 
 ## Installation ##
 
